@@ -138,7 +138,7 @@ function setupRoleNavigation(role) {
 function showNav(element) {
 
     if (element) {
-        element.style.display = "block";
+        element.style.display = "flex";
     }
 
 }

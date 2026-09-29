@@ -1577,19 +1577,19 @@ EXIT QUESTIONNAIRE MANAGEMENT
 }
 
 .sidebar-nav .nav-item::before {
-    width: 7px;
-    height: 7px;
-    flex: 0 0 7px;
-    border: 1px solid rgba(255, 255, 255, 0.44);
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.18);
-    content: "";
+    content: none;
 }
 
 .sidebar-nav .nav-item.active::before {
-    border-color: #ffffff;
-    background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.13);
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 16px;
+    flex: 0 0 2px;
+    margin-right: 2px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1.5px);
 }
 
 /* =========================================================
@@ -1824,7 +1824,7 @@ body,
 }
 
 .sidebar-nav {
-    gap: 8px;
+    gap: 7px;
     padding: 0 4px;
 }
 
@@ -1836,8 +1836,8 @@ body,
     min-height: 46px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 0 15px;
+    gap: 7px;
+    padding: 0 18px;
     border: 1px solid transparent;
     border-radius: 13px;
     background: transparent;
@@ -1854,7 +1854,7 @@ body,
 .sidebar-bottom .nav-item:hover:not(:disabled),
 .sidebar-nav a.active,
 .sidebar-nav .nav-item.active {
-    transform: translateX(2px);
+    transform: none;
     border-color: rgba(255, 255, 255, 0.13);
     background: linear-gradient(100deg, rgba(192, 132, 252, 0.34), rgba(124, 58, 237, 0.72));
     color: #ffffff;
@@ -1867,7 +1867,7 @@ body,
 }
 
 .sidebar-bottom {
-    gap: 8px;
+    gap: 7px;
     padding: 18px 4px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
 }

@@ -30,13 +30,15 @@
     <!-- SIDEBAR -->
     <!-- ================================================= -->
 
-    <aside class="sidebar">
+        <aside class="sidebar">
 
+
+        <!-- BRAND -->
 
         <div class="sidebar-brand">
 
-            <div class="sidebar-logo">
-                GCS
+            <div class="brand-logo small">
+                GC
             </div>
 
             <div>
@@ -54,59 +56,118 @@
         </div>
 
 
+
+        <!-- ================================================= -->
+        <!-- NAVIGATION -->
+        <!-- ================================================= -->
+
         <nav class="sidebar-nav">
 
-            <a href="/dashboard">
-                Dashboard
-            </a>
 
-            <a
-                href="/appointments"
+            <!-- DASHBOARD -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="dashboardNav"
+                onclick="window.location.href='/dashboard'"
+            >
+                Dashboard
+            </button>
+
+
+            <!-- APPOINTMENTS -->
+
+            <button
+                type="button"
+                class="nav-item"
                 id="appointmentsNav"
+                onclick="window.location.href='/appointments'"
             >
                 Appointments
-            </a>
+            </button>
 
-            <a
-                href="/cases"
+
+            <!-- CASES -->
+
+            <button
+                type="button"
+                class="nav-item"
                 id="casesNav"
+                onclick="window.location.href='/cases'"
             >
                 Cases
-            </a>
+            </button>
 
-            <a
-                href="/referrals"
+
+            <!-- REFERRALS -->
+
+            <button
+                type="button"
+                class="nav-item"
                 id="referralsNav"
+                onclick="window.location.href='/referrals'"
             >
                 Referrals
-            </a>
+            </button>
 
-            <a
-                href="/manage-exit-questionnaire"
+
+            <!-- EXIT QUESTIONNAIRE -->
+
+            <button
+                type="button"
+                class="nav-item"
                 id="exitNav"
+                onclick="window.location.href='/manage-exit-questionnaire'"
             >
                 Exit Questionnaire
-            </a>
+            </button>
 
-            <a
-                href="/clearance"
+
+            <!-- CLEARANCE -->
+
+            <button
+                type="button"
+                class="nav-item"
                 id="clearanceNav"
+                onclick="window.location.href='/clearance'"
             >
                 Clearance
-            </a>
+            </button>
 
-            <a
-                href="/admin-management"
+
+            <!-- ADMINISTRATION -->
+            <!-- Current page -->
+
+            <button
+                type="button"
+                class="nav-item active"
                 id="adminNav"
-                class="active"
+                disabled
             >
                 Administration
-            </a>
+            </button>
+
 
         </nav>
 
 
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR BOTTOM -->
+        <!-- ================================================= -->
+
         <div class="sidebar-bottom">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+            >
+                My Profile
+            </button>
+
 
             <button
                 type="button"
@@ -115,6 +176,7 @@
             >
                 Sign Out
             </button>
+
 
         </div>
 

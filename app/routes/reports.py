@@ -2,7 +2,7 @@ from io import BytesIO
 
 from flask import Blueprint, send_file
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import (
     ParagraphStyle,
@@ -133,13 +133,13 @@ def make_pdf(title, rows, confidentiality=None):
                 "TOPPADDING",
                 (0, 0),
                 (-1, -1),
-                7,
+                5,
             ),
             (
                 "BOTTOMPADDING",
                 (0, 0),
                 (-1, -1),
-                7,
+                5,
             ),
         ])
     )
@@ -1097,7 +1097,6 @@ def make_appointment_confirmation_pdf(appointment):
 
     return buffer
 
-
 # =========================================================
 # APPOINTMENT CONFIRMATION SLIP
 # =========================================================
@@ -1179,6 +1178,642 @@ def appointment_confirmation(appointment_id):
         ),
     )
 
+def make_case_summary_pdf(case):
+
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=22 * mm,
+        leftMargin=22 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
+        title="Confidential Case Summary Slip",
+        author="University Guidance & Counseling Office",
+    )
+
+    # -----------------------------------------------------
+    # COLORS
+    # -----------------------------------------------------
+
+    purple = colors.HexColor("#6F42C1")
+    dark_purple = colors.HexColor("#4F2B78")
+    light_purple = colors.HexColor("#F4EEFB")
+
+    dark_text = colors.HexColor("#2F2935")
+    gray_text = colors.HexColor("#6F6875")
+    border = colors.HexColor("#DDD6E5")
+    notice_background = colors.HexColor("#F8F5FB")
+
+    # -----------------------------------------------------
+    # STYLES
+    # -----------------------------------------------------
+
+    styles = getSampleStyleSheet()
+
+    office_title_style = ParagraphStyle(
+        "CaseOfficeTitle",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=13,
+        leading=16,
+        textColor=dark_text,
+        spaceAfter=2,
+    )
+
+    office_subtitle_style = ParagraphStyle(
+        "CaseOfficeSubtitle",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=11,
+        textColor=gray_text,
+    )
+
+    document_title_style = ParagraphStyle(
+        "CaseDocumentTitle",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=16,
+        leading=20,
+        alignment=TA_CENTER,
+        textColor=dark_purple,
+        spaceAfter=0,
+    )
+
+    document_subtitle_style = ParagraphStyle(
+        "CaseDocumentSubtitle",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=11,
+        alignment=TA_CENTER,
+        textColor=gray_text,
+    )
+
+    section_title_style = ParagraphStyle(
+        "CaseSectionTitle",
+        parent=styles["Heading3"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        textColor=dark_purple,
+        spaceAfter=0,
+    )
+
+    label_style = ParagraphStyle(
+        "CaseLabel",
+        parent=styles["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        textColor=gray_text,
+    )
+
+    value_style = ParagraphStyle(
+        "CaseValue",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9.5,
+        leading=13,
+        textColor=dark_text,
+    )
+
+    emphasized_value_style = ParagraphStyle(
+        "CaseEmphasizedValue",
+        parent=value_style,
+        fontName="Helvetica-Bold",
+        textColor=dark_purple,
+    )
+
+    notice_title_style = ParagraphStyle(
+        "CaseNoticeTitle",
+        parent=styles["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        textColor=dark_purple,
+        spaceAfter=4,
+    )
+
+    notice_text_style = ParagraphStyle(
+        "CaseNoticeText",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=12,
+        textColor=dark_text,
+        alignment=TA_JUSTIFY,
+    )
+
+    signature_style = ParagraphStyle(
+        "CaseSignature",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10,
+        alignment=TA_CENTER,
+        textColor=gray_text,
+    )
+
+    footer_style = ParagraphStyle(
+        "CaseFooter",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=7.5,
+        leading=10,
+        alignment=TA_CENTER,
+        textColor=gray_text,
+    )
+
+    # -----------------------------------------------------
+    # HEADER
+    # -----------------------------------------------------
+
+    gc_logo = Table(
+        [[
+            Paragraph(
+                "<b>GC</b>",
+                ParagraphStyle(
+                    "CaseGCLogo",
+                    parent=styles["BodyText"],
+                    fontName="Helvetica-Bold",
+                    fontSize=19,
+                    leading=22,
+                    alignment=TA_CENTER,
+                    textColor=colors.white,
+                ),
+            )
+        ]],
+        colWidths=[19 * mm],
+        rowHeights=[19 * mm],
+    )
+
+    gc_logo.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                purple,
+            ),
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "MIDDLE",
+            ),
+            (
+                "ALIGN",
+                (0, 0),
+                (-1, -1),
+                "CENTER",
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.8,
+                purple,
+            ),
+        ])
+    )
+
+    office_text = [
+        Paragraph(
+            "UNIVERSITY GUIDANCE &amp; COUNSELING OFFICE",
+            office_title_style,
+        ),
+        Paragraph(
+            "Guidance and Counseling Management System",
+            office_subtitle_style,
+        ),
+    ]
+
+    header = Table(
+        [[gc_logo, office_text]],
+        colWidths=[
+            24 * mm,
+            140 * mm,
+        ],
+    )
+
+    header.setStyle(
+        TableStyle([
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "MIDDLE",
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+        ])
+    )
+
+    divider = Table(
+        [[""]],
+        colWidths=[166 * mm],
+        rowHeights=[1.2 * mm],
+    )
+
+    divider.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                purple,
+            ),
+        ])
+    )
+
+    # -----------------------------------------------------
+    # CASE INFORMATION
+    # -----------------------------------------------------
+
+    pseudonym = f"STUDENT-{case.student_id:05d}"
+
+    opened_date = (
+        format_document_date(case.opened_at)
+        if case.opened_at
+        else "—"
+    )
+
+    closed_date = (
+        format_document_date(case.closed_at)
+        if case.closed_at
+        else "Open"
+    )
+
+    counselor_name = (
+        case.counselor.to_dict()["full_name"]
+        if case.counselor
+        else "—"
+    )
+
+    priority = (
+        case.priority.value
+        if case.priority
+        else "—"
+    )
+
+    status = (
+        case.status.value
+        if case.status
+        else "—"
+    )
+
+    case_section_title = Table(
+        [[
+            Paragraph(
+                "CASE INFORMATION",
+                section_title_style,
+            )
+        ]],
+        colWidths=[166 * mm],
+    )
+
+    case_section_title.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                light_purple,
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                border,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+        ])
+    )
+
+    case_data = [
+        [
+            Paragraph("Case Number", label_style),
+            Paragraph(
+                str(case.case_number or "—"),
+                emphasized_value_style,
+            ),
+        ],
+        [
+            Paragraph("Student Pseudonym", label_style),
+            Paragraph(
+                pseudonym,
+                emphasized_value_style,
+            ),
+        ],
+        [
+            Paragraph("Category", label_style),
+            Paragraph(
+                str(case.category or "—"),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph("Priority", label_style),
+            Paragraph(
+                str(priority).replace("_", " ").title(),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph("Case Status", label_style),
+            Paragraph(
+                str(status).replace("_", " ").title(),
+                emphasized_value_style,
+            ),
+        ],
+        [
+            Paragraph("Assigned Counselor", label_style),
+            Paragraph(
+                str(counselor_name),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph("Date Opened", label_style),
+            Paragraph(
+                opened_date,
+                value_style,
+            ),
+        ],
+        [
+            Paragraph("Date Closed", label_style),
+            Paragraph(
+                closed_date,
+                value_style,
+            ),
+        ],
+    ]
+
+    case_table = Table(
+        case_data,
+        colWidths=[
+            43 * mm,
+            123 * mm,
+        ],
+    )
+
+    case_table.setStyle(
+        TableStyle([
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "TOP",
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                border,
+            ),
+            (
+                "INNERGRID",
+                (0, 0),
+                (-1, -1),
+                0.35,
+                border,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                5,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                5,
+            ),
+        ])
+    )
+
+    # -----------------------------------------------------
+    # CONFIDENTIALITY NOTICE
+    # -----------------------------------------------------
+
+    confidentiality_notice = Table(
+        [
+            [
+                Paragraph(
+                    "CONFIDENTIALITY NOTICE",
+                    notice_title_style,
+                )
+            ],
+            [
+                Paragraph(
+                    "This document is a pseudonymized case summary intended "
+                    "for authorized Guidance and Counseling personnel only. "
+                    "The student's identifying information is excluded from "
+                    "this report. Confidential progress-note contents and "
+                    "session details are not included.",
+                    notice_text_style,
+                )
+            ],
+        ],
+        colWidths=[166 * mm],
+    )
+
+    confidentiality_notice.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                notice_background,
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.7,
+                purple,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                10,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                10,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+        ])
+    )
+
+    # -----------------------------------------------------
+    # SIGNATURE
+    # -----------------------------------------------------
+
+    signatures = Table(
+        [
+            [
+                "",
+                Paragraph(
+                    "____________________________",
+                    signature_style,
+                ),
+            ],
+            [
+                "",
+                Paragraph(
+                    "Counselor / Authorized Personnel",
+                    signature_style,
+                ),
+            ],
+        ],
+        colWidths=[
+            83 * mm,
+            83 * mm,
+        ],
+    )
+
+    # -----------------------------------------------------
+    # FOOTER
+    # -----------------------------------------------------
+
+    footer = Paragraph(
+        "CONFIDENTIAL — System-generated document from the "
+        "University Guidance &amp; Counseling Management System.",
+        footer_style,
+    )
+
+    # -----------------------------------------------------
+    # BUILD - ONE PAGE
+    # -----------------------------------------------------
+
+    story = [
+        header,
+
+        Spacer(1, 3 * mm),
+
+        divider,
+
+        Spacer(1, 5 * mm),
+
+        Paragraph(
+            "CONFIDENTIAL CASE SUMMARY SLIP",
+            document_title_style,
+        ),
+
+        Spacer(1, 1.5 * mm),
+
+        Paragraph(
+            "Pseudonymized Case Record",
+            document_subtitle_style,
+        ),
+
+        Spacer(1, 5 * mm),
+
+        KeepTogether([
+            case_section_title,
+            case_table,
+        ]),
+
+        Spacer(1, 5 * mm),
+
+        confidentiality_notice,
+
+        Spacer(1, 9 * mm),
+
+        signatures,
+
+        Spacer(1, 6 * mm),
+
+        divider,
+
+        Spacer(1, 2.5 * mm),
+
+        footer,
+    ]
+
+    doc.build(story)
+
+    buffer.seek(0)
+
+    return buffer
 
 # =========================================================
 # CONFIDENTIAL CASE SUMMARY
@@ -1188,9 +1823,10 @@ def appointment_confirmation(appointment_id):
     "/reports/cases/<int:case_id>/summary.pdf"
 )
 @roles_required(
+    UserRole.STUDENT,
     UserRole.COUNSELOR,
     UserRole.HEAD_COUNSELOR,
-    UserRole.ADMIN,
+    UserRole.ADMIN
 )
 def case_summary(case_id):
 
@@ -1233,50 +1869,8 @@ def case_summary(case_id):
 
     db.session.commit()
 
-    pdf = make_pdf(
-        "Confidential Case Summary Slip",
-        [
-            (
-                "Case Number",
-                case.case_number,
-            ),
-            (
-                "Student Pseudonym",
-                pseudonym,
-            ),
-            (
-                "Category",
-                case.category,
-            ),
-            (
-                "Priority",
-                case.priority.value,
-            ),
-            (
-                "Status",
-                case.status.value,
-            ),
-            (
-                "Assigned Counselor",
-                case.counselor.to_dict()["full_name"],
-            ),
-            (
-                "Date Opened",
-                case.opened_at.date().isoformat(),
-            ),
-            (
-                "Date Closed",
-                (
-                    case.closed_at.date().isoformat()
-                    if case.closed_at
-                    else "Open"
-                ),
-            ),
-        ],
-        (
-            "CONFIDENTIAL — Pseudonymized output. "
-            "Progress-note contents are excluded."
-        ),
+    pdf = make_case_summary_pdf(
+        case
     )
 
     return send_file(
@@ -1288,6 +1882,785 @@ def case_summary(case_id):
         ),
     )
 
+def make_clearance_certificate_pdf(clearance):
+
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=22 * mm,
+        leftMargin=22 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
+        title="Student Exit Clearance Certificate",
+        author="University Guidance & Counseling Office",
+    )
+
+    # -----------------------------------------------------
+    # COLORS
+    # -----------------------------------------------------
+
+    purple = colors.HexColor("#6F42C1")
+    dark_purple = colors.HexColor("#4F2B78")
+    light_purple = colors.HexColor("#F4EEFB")
+
+    dark_text = colors.HexColor("#2F2935")
+    gray_text = colors.HexColor("#6F6875")
+    border = colors.HexColor("#DDD6E5")
+    notice_background = colors.HexColor("#F8F5FB")
+
+    # -----------------------------------------------------
+    # STYLES
+    # -----------------------------------------------------
+
+    styles = getSampleStyleSheet()
+
+    office_title_style = ParagraphStyle(
+        "ClearanceOfficeTitle",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=13,
+        leading=16,
+        textColor=dark_text,
+        spaceAfter=2,
+    )
+
+    office_subtitle_style = ParagraphStyle(
+        "ClearanceOfficeSubtitle",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=11,
+        textColor=gray_text,
+    )
+
+    document_title_style = ParagraphStyle(
+        "ClearanceDocumentTitle",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=16,
+        leading=20,
+        alignment=TA_CENTER,
+        textColor=dark_purple,
+        spaceAfter=0,
+    )
+
+    certificate_number_style = ParagraphStyle(
+        "ClearanceCertificateNumber",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=11,
+        alignment=TA_CENTER,
+        textColor=gray_text,
+    )
+
+    section_title_style = ParagraphStyle(
+        "ClearanceSectionTitle",
+        parent=styles["Heading3"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        textColor=dark_purple,
+        spaceAfter=0,
+    )
+
+    label_style = ParagraphStyle(
+        "ClearanceLabel",
+        parent=styles["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        textColor=gray_text,
+    )
+
+    value_style = ParagraphStyle(
+        "ClearanceValue",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=9.5,
+        leading=13,
+        textColor=dark_text,
+    )
+
+    status_style = ParagraphStyle(
+        "ClearanceStatus",
+        parent=value_style,
+        fontName="Helvetica-Bold",
+        textColor=dark_purple,
+    )
+
+    notice_title_style = ParagraphStyle(
+        "ClearanceNoticeTitle",
+        parent=styles["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        textColor=dark_purple,
+        spaceAfter=4,
+    )
+
+    notice_text_style = ParagraphStyle(
+        "ClearanceNoticeText",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=12,
+        textColor=dark_text,
+        alignment=TA_JUSTIFY,
+    )
+
+    signature_style = ParagraphStyle(
+        "ClearanceSignature",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10,
+        alignment=TA_CENTER,
+        textColor=gray_text,
+    )
+
+    footer_style = ParagraphStyle(
+        "ClearanceFooter",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=7.5,
+        leading=10,
+        alignment=TA_CENTER,
+        textColor=gray_text,
+    )
+
+    # -----------------------------------------------------
+    # HEADER
+    # -----------------------------------------------------
+
+    gc_logo = Table(
+        [[
+            Paragraph(
+                "<b>GC</b>",
+                ParagraphStyle(
+                    "ClearanceGCLogo",
+                    parent=styles["BodyText"],
+                    fontName="Helvetica-Bold",
+                    fontSize=19,
+                    leading=22,
+                    alignment=TA_CENTER,
+                    textColor=colors.white,
+                ),
+            )
+        ]],
+        colWidths=[19 * mm],
+        rowHeights=[19 * mm],
+    )
+
+    gc_logo.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                purple,
+            ),
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "MIDDLE",
+            ),
+            (
+                "ALIGN",
+                (0, 0),
+                (-1, -1),
+                "CENTER",
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.8,
+                purple,
+            ),
+        ])
+    )
+
+    office_text = [
+        Paragraph(
+            "UNIVERSITY GUIDANCE &amp; COUNSELING OFFICE",
+            office_title_style,
+        ),
+        Paragraph(
+            "Guidance and Counseling Management System",
+            office_subtitle_style,
+        ),
+    ]
+
+    header = Table(
+        [[gc_logo, office_text]],
+        colWidths=[
+            24 * mm,
+            140 * mm,
+        ],
+    )
+
+    header.setStyle(
+        TableStyle([
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "MIDDLE",
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                0,
+            ),
+        ])
+    )
+
+    divider = Table(
+        [[""]],
+        colWidths=[166 * mm],
+        rowHeights=[1.2 * mm],
+    )
+
+    divider.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                purple,
+            ),
+        ])
+    )
+
+    # -----------------------------------------------------
+    # STUDENT INFORMATION
+    # -----------------------------------------------------
+
+    student = clearance.student
+
+    student_name = student.to_dict()["full_name"]
+
+    student_section_title = Table(
+        [[
+            Paragraph(
+                "STUDENT INFORMATION",
+                section_title_style,
+            )
+        ]],
+        colWidths=[166 * mm],
+    )
+
+    student_section_title.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                light_purple,
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                border,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+        ])
+    )
+
+    student_data = [
+        [
+            Paragraph("Student Name", label_style),
+            Paragraph(str(student_name or "—"), value_style),
+        ],
+        [
+            Paragraph("Student Number", label_style),
+            Paragraph(
+                str(student.student_number or "—"),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph("Program", label_style),
+            Paragraph(
+                str(student.program or "—"),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph("Year Level", label_style),
+            Paragraph(
+                str(student.year_level or "—"),
+                value_style,
+            ),
+        ],
+    ]
+
+    student_table = Table(
+        student_data,
+        colWidths=[
+            43 * mm,
+            123 * mm,
+        ],
+    )
+
+    student_table.setStyle(
+        TableStyle([
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "TOP",
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                border,
+            ),
+            (
+                "INNERGRID",
+                (0, 0),
+                (-1, -1),
+                0.35,
+                border,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+        ])
+    )
+
+    # -----------------------------------------------------
+    # CLEARANCE DETAILS
+    # -----------------------------------------------------
+
+    approved_date = (
+        format_document_date(clearance.approved_at)
+        if clearance.approved_at
+        else "—"
+    )
+
+    status = (
+        clearance.status.value
+        if clearance.status
+        else "—"
+    )
+
+    clearance_section_title = Table(
+        [[
+            Paragraph(
+                "CLEARANCE DETAILS",
+                section_title_style,
+            )
+        ]],
+        colWidths=[166 * mm],
+    )
+
+    clearance_section_title.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                light_purple,
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                border,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                6,
+            ),
+        ])
+    )
+
+    clearance_data = [
+        [
+            Paragraph("Academic Year", label_style),
+            Paragraph(
+                str(clearance.academic_year or "—"),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph("Clearance Status", label_style),
+            Paragraph(
+                str(status).replace("_", " ").title(),
+                status_style,
+            ),
+        ],
+        [
+            Paragraph("Approved Date", label_style),
+            Paragraph(
+                approved_date,
+                value_style,
+            ),
+        ],
+        [
+            Paragraph(
+                "Exit Questionnaire",
+                label_style,
+            ),
+            Paragraph(
+                (
+                    "Completed"
+                    if clearance.exit_questionnaire_completed
+                    else "Not Completed"
+                ),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph(
+                "Counseling Requirements",
+                label_style,
+            ),
+            Paragraph(
+                (
+                    "Completed"
+                    if clearance.counseling_requirements_completed
+                    else "Not Completed"
+                ),
+                value_style,
+            ),
+        ],
+        [
+            Paragraph(
+                "Exit Interview",
+                label_style,
+            ),
+            Paragraph(
+                (
+                    "Completed"
+                    if clearance.exit_interview_completed
+                    else "Not Completed"
+                ),
+                value_style,
+            ),
+        ],
+    ]
+
+    clearance_table = Table(
+        clearance_data,
+        colWidths=[
+            43 * mm,
+            123 * mm,
+        ],
+    )
+
+    clearance_table.setStyle(
+        TableStyle([
+            (
+                "VALIGN",
+                (0, 0),
+                (-1, -1),
+                "TOP",
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.5,
+                border,
+            ),
+            (
+                "INNERGRID",
+                (0, 0),
+                (-1, -1),
+                0.35,
+                border,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                8,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+        ])
+    )
+
+    # -----------------------------------------------------
+    # CERTIFICATION
+    # -----------------------------------------------------
+
+    certification = Table(
+        [
+            [
+                Paragraph(
+                    "CERTIFICATION",
+                    notice_title_style,
+                )
+            ],
+            [
+                Paragraph(
+                    "This is to certify that the student named above "
+                    "has completed the required Guidance and Counseling "
+                    "exit-clearance requirements recorded in the system "
+                    "for the indicated academic year and has been marked "
+                    "CLEARED by the University Guidance and Counseling "
+                    "Office.",
+                    notice_text_style,
+                )
+            ],
+        ],
+        colWidths=[166 * mm],
+    )
+
+    certification.setStyle(
+        TableStyle([
+            (
+                "BACKGROUND",
+                (0, 0),
+                (-1, -1),
+                notice_background,
+            ),
+            (
+                "BOX",
+                (0, 0),
+                (-1, -1),
+                0.7,
+                purple,
+            ),
+            (
+                "LEFTPADDING",
+                (0, 0),
+                (-1, -1),
+                10,
+            ),
+            (
+                "RIGHTPADDING",
+                (0, 0),
+                (-1, -1),
+                10,
+            ),
+            (
+                "TOPPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+            (
+                "BOTTOMPADDING",
+                (0, 0),
+                (-1, -1),
+                7,
+            ),
+        ])
+    )
+
+    # -----------------------------------------------------
+    # SIGNATURE
+    # -----------------------------------------------------
+
+    signatures = Table(
+        [
+            [
+                "",
+                Paragraph(
+                    "____________________________",
+                    signature_style,
+                ),
+            ],
+            [
+                "",
+                Paragraph(
+                    "Authorized Guidance Personnel",
+                    signature_style,
+                ),
+            ],
+        ],
+        colWidths=[
+            83 * mm,
+            83 * mm,
+        ],
+    )
+
+    # -----------------------------------------------------
+    # FOOTER
+    # -----------------------------------------------------
+
+    footer = Paragraph(
+        "This is a system-generated document from the "
+        "University Guidance &amp; Counseling Management System.",
+        footer_style,
+    )
+
+    # -----------------------------------------------------
+    # BUILD
+    # -----------------------------------------------------
+
+    story = [
+        header,
+
+        Spacer(1, 3 * mm),
+
+        divider,
+
+        Spacer(1, 4 * mm),
+
+        Paragraph(
+            "STUDENT EXIT CLEARANCE CERTIFICATE",
+            document_title_style,
+        ),
+
+        Spacer(1, 1 * mm),
+
+        Paragraph(
+            (
+                "Certificate No. "
+                f"{clearance.certificate_number or '—'}"
+            ),
+            certificate_number_style,
+        ),
+
+        Spacer(1, 4 * mm),
+
+        KeepTogether([
+            student_section_title,
+            student_table,
+        ]),
+
+        Spacer(1, 4 * mm),
+
+        KeepTogether([
+            clearance_section_title,
+            clearance_table,
+        ]),
+
+        Spacer(1, 4 * mm),
+
+        certification,
+
+        Spacer(1, 7 * mm),
+
+        signatures,
+
+        Spacer(1, 5 * mm),
+
+        divider,
+
+        Spacer(1, 2 * mm),
+
+        footer,
+    ]
+
+    doc.build(story)
+
+    buffer.seek(0)
+
+    return buffer
 
 # =========================================================
 # STUDENT EXIT CLEARANCE CERTIFICATE
@@ -1351,49 +2724,8 @@ def clearance_certificate(clearance_id):
 
     db.session.commit()
 
-    student = clearance.student
-
-    pdf = make_pdf(
-        "Student Exit Clearance Certificate",
-        [
-            (
-                "Certificate Number",
-                clearance.certificate_number,
-            ),
-            (
-                "Student",
-                student.to_dict()["full_name"],
-            ),
-            (
-                "Student Number",
-                student.student_number,
-            ),
-            (
-                "Program / Year",
-                (
-                    f"{student.program} / "
-                    f"{student.year_level}"
-                ),
-            ),
-            (
-                "Academic Year",
-                clearance.academic_year,
-            ),
-            (
-                "Clearance Status",
-                clearance.status.value,
-            ),
-            (
-                "Approved At",
-                (
-                    clearance.approved_at.strftime(
-                        "%Y-%m-%d %H:%M UTC"
-                    )
-                    if clearance.approved_at
-                    else "—"
-                ),
-            ),
-        ],
+    pdf = make_clearance_certificate_pdf(
+        clearance
     )
 
     return send_file(
