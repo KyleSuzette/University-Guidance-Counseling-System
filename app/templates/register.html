@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Create Student Account</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-container registration-container">
+
+        <section class="auth-brand">
+
+            <div class="brand-logo">
+                GC
+            </div>
+
+            <h1>
+                Student
+                <br>
+                Registration
+            </h1>
+
+            <p class="brand-subtitle">
+                University Guidance & Counseling
+            </p>
+
+            <p class="brand-description">
+                Create your student account to request counseling
+                appointments, complete exit requirements, and access
+                your guidance services.
+            </p>
+
+        </section>
+
+
+        <section class="auth-card">
+
+            <div class="auth-card-header">
+
+                <h2>Create Account</h2>
+
+                <p>
+                    Student accounts only.
+                </p>
+
+            </div>
+
+
+            <div
+                id="registerMessage"
+                class="message hidden"
+            ></div>
+
+
+            <form id="registerForm">
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="firstName">
+                            First Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="firstName"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="lastName">
+                            Last Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="lastName"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="studentNumber">
+                        Student Number
+                    </label>
+
+                    <input
+                        type="text"
+                        id="studentNumber"
+                        placeholder="Enter student number"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="program">
+                        Program
+                    </label>
+
+                    <input
+                        type="text"
+                        id="program"
+                        placeholder="Example: BS Computer Engineering"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="yearLevel">
+                        Year Level
+                    </label>
+
+                    <select
+                        id="yearLevel"
+                        required
+                    >
+                        <option value="">
+                            Select year level
+                        </option>
+
+                        <option value="1">
+                            1st Year
+                        </option>
+
+                        <option value="2">
+                            2nd Year
+                        </option>
+
+                        <option value="3">
+                            3rd Year
+                        </option>
+
+                        <option value="4">
+                            4th Year
+                        </option>
+
+                        <option value="5">
+                            5th Year
+                        </option>
+
+                        <option value="6">
+                            6th Year
+                        </option>
+
+                        <option value="7">
+                            7th Year
+                        </option>
+
+                        <option value="8">
+                            8th Year
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="contactNumber">
+                        Contact Number
+                        <span class="optional-text">
+                            (optional)
+                        </span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="contactNumber"
+                        placeholder="09XXXXXXXXX"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        autocomplete="email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <div class="password-wrapper">
+
+                        <input
+                            type="password"
+                            id="password"
+                            autocomplete="new-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            id="togglePassword"
+                            class="password-toggle"
+                        >
+                            Show
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    id="registerSubmitButton"
+                    class="btn btn-primary btn-full"
+                >
+                    Create Student Account
+                </button>
+
+            </form>
+
+
+            <div class="auth-footer">
+
+                <p>
+                    Already have an account?
+                </p>
+
+                <button
+                    type="button"
+                    id="backToLoginButton"
+                    class="link-button"
+                >
+                    Back to Sign In
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <script
+        src="{{ url_for('static', filename='js/api.js') }}"
+    ></script>
+
+    <script
+        src="{{ url_for('static', filename='js/register.js') }}"
+    ></script>
+
+</body>
+
+</html>

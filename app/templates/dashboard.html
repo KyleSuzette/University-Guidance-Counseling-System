@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Guidance Dashboard
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body class="dashboard-body">
+
+
+<div class="dashboard-layout">
+
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+
+        <!-- BRAND -->
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo small">
+                GC
+            </div>
+
+            <div>
+
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- MAIN NAVIGATION -->
+        <!-- ================================================= -->
+
+        <nav class="sidebar-nav">
+
+
+            <!-- DASHBOARD -->
+
+            <button
+                type="button"
+                class="nav-item active"
+                id="dashboardNav"
+                disabled
+            >
+                Dashboard
+            </button>
+
+
+            <!-- APPOINTMENTS -->
+            <!-- Available to authenticated account roles -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="appointmentsNav"
+                style="display: none;"
+                onclick="window.location.href='/appointments'"
+            >
+                Appointments
+            </button>
+
+
+            <!-- CASES -->
+            <!-- Visibility controlled by navigation.js -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="casesNav"
+                style="display: none;"
+            >
+                Cases
+            </button>
+
+
+            <!-- REFERRALS -->
+            <!-- Visibility and label controlled by navigation.js -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="referralsNav"
+                style="display: none;"
+            >
+                Referrals
+            </button>
+
+
+            <!-- EXIT QUESTIONNAIRE -->
+            <!-- Visibility controlled by navigation.js -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="exitNav"
+                style="display: none;"
+            >
+                Exit Questionnaire
+            </button>
+
+
+            <!-- CLEARANCE -->
+            <!-- Visibility controlled by navigation.js -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="clearanceNav"
+                style="display: none;"
+            >
+                Clearance
+            </button>
+
+
+            <!-- ADMINISTRATION -->
+            <!-- Admin only. Hidden by default. -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="adminNav"
+                style="display: none;"
+            >
+                Administration
+            </button>
+
+
+        </nav>
+
+
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR BOTTOM -->
+        <!-- ================================================= -->
+
+        <div class="sidebar-bottom">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+            >
+                My Profile
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- ================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================= -->
+
+    <main class="main-content">
+
+
+        <!-- ================================================= -->
+        <!-- HEADER -->
+        <!-- ================================================= -->
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <h1 id="dashboardTitle">
+                    Dashboard
+                </h1>
+
+                <p id="welcomeText">
+                    Loading your account...
+                </p>
+
+            </div>
+
+
+            <div class="user-header">
+
+                <div
+                    class="user-avatar"
+                    id="userAvatar"
+                >
+                    U
+                </div>
+
+
+                <div>
+
+                    <strong id="headerUserName">
+                        User
+                    </strong>
+
+                    <span id="headerUserRole">
+                        Loading
+                    </span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ================================================= -->
+        <!-- DASHBOARD MESSAGE -->
+        <!-- ================================================= -->
+
+        <div
+            id="dashboardMessage"
+            class="message hidden"
+        >
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- DASHBOARD STAT CARDS -->
+        <!-- ================================================= -->
+
+        <section
+            class="stats-grid"
+            id="statsGrid"
+        >
+        </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- DASHBOARD PANELS -->
+        <!-- ================================================= -->
+
+        <section class="dashboard-grid">
+
+
+            <!-- QUICK ACTIONS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+                            Quick Actions
+                        </h2>
+
+                        <p>
+                            Common tasks for your account
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="quick-actions"
+                    id="quickActions"
+                >
+                </div>
+
+            </div>
+
+
+
+            <!-- ACCOUNT INFORMATION -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+                            Account Information
+                        </h2>
+
+                        <p>
+                            Your current account details
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="account-information"
+                    id="accountInformation"
+                >
+                    Loading...
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- COUNSELING CASE WORKFLOW -->
+        <!-- ================================================= -->
+
+        <section class="panel workflow-panel"
+                 id="caseWorkflowPanel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Counseling Case Lifecycle
+                    </h2>
+
+                    <p>
+                        Standard progression of counseling cases
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="case-lifecycle">
+
+
+                <!-- INTAKE -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        1
+                    </span>
+
+                    <strong>
+                        INTAKE
+                    </strong>
+
+                </div>
+
+
+                <span class="lifecycle-arrow">
+                    →
+                </span>
+
+
+
+                <!-- ACTIVE -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        2
+                    </span>
+
+                    <strong>
+                        ACTIVE
+                    </strong>
+
+                </div>
+
+
+                <span class="lifecycle-arrow">
+                    →
+                </span>
+
+
+
+                <!-- FOLLOW UP -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        3
+                    </span>
+
+                    <strong>
+                        FOLLOW UP
+                    </strong>
+
+                </div>
+
+
+                <span class="lifecycle-arrow">
+                    →
+                </span>
+
+
+
+                <!-- CLOSED -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        4
+                    </span>
+
+                    <strong>
+                        CLOSED
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+
+<!-- ================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ================================================= -->
+
+<!--
+    1. api.js
+       Handles authentication/session/API requests.
+
+    2. navigation.js
+       Handles shared role-based sidebar visibility.
+
+    3. dashboard.js
+       Handles dashboard-specific content and actions.
+
+    Keep this order.
+-->
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/navigation.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/dashboard_v2.js') }}"
+></script>
+
+
+{% include "_workspace.html" %}
+</body>
+
+</html>

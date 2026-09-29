@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Anonymous Peer Referral
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body class="dashboard-body">
+
+
+<div class="dashboard-layout">
+
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo small">
+                GC
+            </div>
+
+            <div>
+
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <button
+                type="button"
+                class="nav-item"
+                id="dashboardNav"
+            >
+                Dashboard
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="appointmentsNav"
+            >
+                Appointments
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="casesNav"
+                style="display: none;"
+            >
+                Cases
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item active"
+                id="referralsNav"
+                style="display: none;"
+            >
+                Referrals
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="exitNav"
+                style="display: none;"
+            >
+                Exit Questionnaire
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="clearanceNav"
+                style="display: none;"
+            >
+                Clearance
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="adminNav"
+                style="display: none;"
+            >
+                Administration
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+            >
+                My Profile
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================= -->
+
+    <main class="main-content">
+
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <h1 id="referralPageTitle">
+                    Anonymous Peer Referral
+                </h1>
+
+                <p id="referralPageDescription">
+                    Submit a concern regarding another student.
+                </p>
+
+            </div>
+
+        </header>
+
+
+        <div
+            id="referralMessage"
+            class="message hidden"
+        >
+        </div>
+
+        <!-- ================================================= -->
+        <!-- HEAD COUNSELOR REFERRAL MANAGEMENT -->
+        <!-- ================================================= -->
+
+        <section
+            id="referralManagementSection"
+            class="panel hidden"
+        >
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Referral Intake & Triage
+                    </h2>
+
+                    <p>
+                        Review submitted concerns, determine the appropriate
+                        level of priority, and coordinate counselor assignment.
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <label class="sr-only" for="managementStatusFilter">Filter referrals by status</label>
+                    <select id="managementStatusFilter">
+
+                        <option value="">
+                            All Referrals
+                        </option>
+
+                        <option value="NEW">
+                            New
+                        </option>
+
+                        <option value="TRIAGED">
+                            Triaged
+                        </option>
+
+                        <option value="ASSIGNED">
+                            Assigned
+                        </option>
+
+                        <option value="CLOSED">
+                            Closed
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="referralQueue"
+                class="referral-queue"
+            >
+
+                <p>
+                    Loading referrals...
+                </p>
+
+            </div>
+
+        </section>
+
+        <section
+            id="publicReferralSection"
+            class="referral-grid"
+        >
+
+
+            <!-- ================================================= -->
+            <!-- SUBMIT REFERRAL -->
+            <!-- ================================================= -->
+
+            <div class="panel referral-panel">
+
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+                            Submit a Referral
+                        </h2>
+
+                        <p>
+                            Your identity is not required for this referral.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <form id="referralForm">
+
+
+                    <div class="form-group">
+
+                        <label for="subjectName">
+                            Student Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="subjectName"
+                            placeholder="Name of student being referred"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="subjectStudentId">
+                            Student ID
+                            <span class="optional-text">
+                                (optional)
+                            </span>
+                        </label>
+
+                        <input
+                            type="number"
+                            id="subjectStudentId"
+                            placeholder="Internal student ID if known"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="programYear">
+                            Program / Year
+                            <span class="optional-text">
+                                (optional)
+                            </span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="programYear"
+                            placeholder="Example: BS Computer Engineering - 3rd Year"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="concernCategory">
+                            Concern Category
+                        </label>
+
+                        <select
+                            id="concernCategory"
+                            required
+                        >
+
+                            <option value="">
+                                Select category
+                            </option>
+
+                            <option value="Academic">
+                                Academic Concern
+                            </option>
+
+                            <option value="Emotional">
+                                Emotional Concern
+                            </option>
+
+                            <option value="Behavioral">
+                                Behavioral Concern
+                            </option>
+
+                            <option value="Family">
+                                Family Concern
+                            </option>
+
+                            <option value="Peer">
+                                Peer Concern
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="observedAt">
+                            Date Observed
+                            <span class="optional-text">
+                                (optional)
+                            </span>
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="observedAt"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="concernDetails">
+                            Concern Details
+                        </label>
+
+                        <textarea
+                            id="concernDetails"
+                            rows="6"
+                            minlength="20"
+                            placeholder="Describe what you observed. Please provide enough information to help the guidance office understand the concern."
+                            required
+                        ></textarea>
+
+                        <small class="form-help">
+                            Minimum of 20 characters.
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        id="submitReferralButton"
+                        class="btn btn-primary btn-full"
+                    >
+                        Submit Anonymous Referral
+                    </button>
+
+
+                </form>
+
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- TRACKING -->
+            <!-- ================================================= -->
+
+            <div>
+
+
+                <section class="panel">
+
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h2>
+                                Check Referral Status
+                            </h2>
+
+                            <p>
+                                Enter your tracking code.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <form id="trackingForm">
+
+
+                        <div class="form-group">
+
+                            <label for="trackingCode">
+                                Tracking Code
+                            </label>
+
+                            <input
+                                type="text"
+                                id="trackingCode"
+                                placeholder="Enter tracking code"
+                                required
+                            >
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            class="btn btn-outline btn-full"
+                        >
+                            Check Status
+                        </button>
+
+
+                    </form>
+
+
+                    <div
+                        id="trackingResult"
+                        class="tracking-result hidden"
+                    >
+                    </div>
+
+
+                </section>
+
+
+                <section class="panel privacy-panel">
+
+                    <h3>
+                        Anonymous Referral
+                    </h3>
+
+                    <p>
+                        The referral form does not request the identity of
+                        the person submitting the concern.
+                    </p>
+
+                    <p>
+                        Keep the tracking code provided after submission.
+                        You can use it to check the referral status later.
+                    </p>
+
+                </section>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/navigation.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/referrals.js') }}"
+></script>
+
+
+{% include "_workspace.html" %}
+</body>
+
+</html>

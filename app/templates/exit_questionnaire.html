@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Exit Questionnaire
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body class="dashboard-body">
+
+
+<div class="dashboard-layout">
+
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo small">
+                GC
+            </div>
+
+            <div>
+
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- NAVIGATION -->
+        <!-- ================================================= -->
+
+        <nav class="sidebar-nav">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="dashboardNav"
+            >
+                Dashboard
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="appointmentsNav"
+            >
+                Appointments
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="casesNav"
+                style="display: none;"
+            >
+                Cases
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="referralsNav"
+                style="display: none;"
+            >
+                Referrals
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item active"
+                id="exitNav"
+                style="display: none;"
+            >
+                Exit Questionnaire
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="clearanceNav"
+                style="display: none;"
+            >
+                Clearance
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="adminNav"
+                style="display: none;"
+            >
+                Administration
+            </button>
+
+
+        </nav>
+
+
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR BOTTOM -->
+        <!-- ================================================= -->
+
+        <div class="sidebar-bottom">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+            >
+                My Profile
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- ================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================= -->
+
+    <main class="main-content">
+
+
+        <!-- ================================================= -->
+        <!-- HEADER -->
+        <!-- ================================================= -->
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <h1>
+                    Exit Questionnaire
+                </h1>
+
+                <p>
+                    Complete the required graduating student
+                    exit assessment.
+                </p>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ================================================= -->
+        <!-- MESSAGE -->
+        <!-- ================================================= -->
+
+        <div
+            id="exitMessage"
+            class="message hidden"
+        >
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- QUESTIONNAIRE -->
+        <!-- ================================================= -->
+
+        <section
+            id="questionnairePanel"
+            class="panel"
+        >
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2 id="questionnaireTitle">
+                        Loading questionnaire...
+                    </h2>
+
+                    <p id="questionnaireDescription">
+                        Please wait while the active questionnaire is loaded.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <form id="exitQuestionnaireForm">
+
+
+                <div id="questionsContainer">
+
+                    <p>
+                        Loading questions...
+                    </p>
+
+                </div>
+
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        id="submitExitButton"
+                        class="primary-button"
+                    >
+                        Submit Questionnaire
+                    </button>
+
+                </div>
+
+
+            </form>
+
+
+        </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- NO QUESTIONNAIRE -->
+        <!-- ================================================= -->
+
+        <section
+            id="noQuestionnairePanel"
+            class="panel hidden"
+        >
+
+
+            <div class="empty-state">
+
+                <h3>
+                    No Active Questionnaire
+                </h3>
+
+                <p>
+                    There is currently no active exit questionnaire
+                    available.
+                </p>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+
+<!-- ================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ================================================= -->
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/navigation.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/exit_questionnaire.js') }}"
+></script>
+
+
+{% include "_workspace.html" %}
+</body>
+
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Student Exit Clearance
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body class="dashboard-body">
+
+
+<div class="dashboard-layout">
+
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo small">
+                GC
+            </div>
+
+            <div>
+
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- NAVIGATION -->
+        <!-- ================================================= -->
+
+        <nav class="sidebar-nav">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="dashboardNav"
+            >
+                Dashboard
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="appointmentsNav"
+            >
+                Appointments
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="casesNav"
+                style="display: none;"
+            >
+                Cases
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="referralsNav"
+                style="display: none;"
+            >
+                Referrals
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="exitNav"
+                style="display: none;"
+            >
+                Exit Questionnaire
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item active"
+                id="clearanceNav"
+                style="display: none;"
+            >
+                Clearance
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="adminNav"
+                style="display: none;"
+            >
+                Administration
+            </button>
+
+
+        </nav>
+
+
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR BOTTOM -->
+        <!-- ================================================= -->
+
+        <div class="sidebar-bottom">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+            >
+                My Profile
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- ================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================= -->
+
+    <main class="dashboard-main">
+
+
+        <!-- ================================================= -->
+        <!-- HEADER -->
+        <!-- ================================================= -->
+
+        <div class="page-header">
+
+            <div>
+
+                <h1 id="clearancePageTitle">
+                    Student Exit Clearance
+                </h1>
+
+                <p id="clearancePageSubtitle">
+                    View your guidance and counseling clearance status.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- MESSAGE -->
+        <!-- ================================================= -->
+
+        <div
+            id="clearanceMessage"
+            class="message"
+        ></div>
+
+
+
+        <!-- ================================================= -->
+        <!-- STUDENT VIEW -->
+        <!-- ================================================= -->
+
+        <section
+            id="studentClearanceSection"
+            class="content-panel"
+            hidden
+        >
+
+            <div id="clearanceContainer">
+
+                <p>
+                    Loading clearance information...
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- EVALUATOR VIEW -->
+        <!-- ================================================= -->
+
+        <section
+            id="evaluationSection"
+            class="content-panel"
+            hidden
+        >
+
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        Clearance Evaluation
+                    </h2>
+
+                    <p>
+                        Review student exit clearance requirements
+                        and confirm completion.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="refreshClearancesButton"
+                    class="secondary-button"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- FILTER -->
+            <!-- ================================================= -->
+
+            <div class="clearance-toolbar">
+
+
+                <div class="form-group">
+
+                    <label for="clearanceStatusFilter">
+                        Status
+                    </label>
+
+                    <select id="clearanceStatusFilter">
+
+                        <option value="">
+                            All
+                        </option>
+
+                        <option value="NOT_CLEARED">
+                            Not Cleared
+                        </option>
+
+                        <option value="CLEARED">
+                            Cleared
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="clearanceSearch">
+                        Search Student
+                    </label>
+
+                    <input
+                        type="text"
+                        id="clearanceSearch"
+                        placeholder="Name or student number"
+                    >
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- CLEARANCE LIST -->
+            <!-- ================================================= -->
+
+            <div id="clearanceEvaluationContainer">
+
+                <p>
+                    Loading clearance records...
+                </p>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+
+<!-- ================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ================================================= -->
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/navigation.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/clearance.js') }}"
+></script>
+
+
+{% include "_workspace.html" %}
+</body>
+
+</html>

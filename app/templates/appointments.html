@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Appointments | Guidance & Counseling
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body class="dashboard-body">
+
+
+<div class="dashboard-layout">
+
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+
+        <!-- BRAND -->
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo small">
+                GC
+            </div>
+
+            <div>
+
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- NAVIGATION -->
+        <!-- ================================================= -->
+
+        <nav class="sidebar-nav">
+
+
+            <!-- DASHBOARD -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="dashboardNav"
+                onclick="window.location.href='/dashboard'"
+            >
+                Dashboard
+            </button>
+
+
+            <!-- APPOINTMENTS -->
+            <!-- Current page -->
+
+            <button
+                type="button"
+                class="nav-item active"
+                id="appointmentsNav"
+                disabled
+            >
+                Appointments
+            </button>
+
+
+            <!-- CASES -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="casesNav"
+                style="display: none;"
+            >
+                Cases
+            </button>
+
+
+            <!-- REFERRALS -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="referralsNav"
+                style="display: none;"
+            >
+                Referrals
+            </button>
+
+
+            <!-- EXIT QUESTIONNAIRE -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="exitNav"
+                style="display: none;"
+            >
+                Exit Questionnaire
+            </button>
+
+
+            <!-- CLEARANCE -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="clearanceNav"
+                style="display: none;"
+            >
+                Clearance
+            </button>
+
+
+            <!-- ADMINISTRATION -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="adminNav"
+                style="display: none;"
+            >
+                Administration
+            </button>
+
+
+        </nav>
+
+
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR BOTTOM -->
+        <!-- ================================================= -->
+
+        <div class="sidebar-bottom">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+            >
+                My Profile
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- ================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================= -->
+
+    <main class="dashboard-main">
+
+
+        <!-- ================================================= -->
+        <!-- PAGE HEADER -->
+        <!-- ================================================= -->
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    Appointments
+                </h1>
+
+                <p id="appointmentPageDescription">
+                    Manage counseling appointments and scheduling.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="openAppointmentForm"
+                class="btn btn-primary hidden"
+            >
+                + Request Appointment
+            </button>
+
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- MESSAGE -->
+        <!-- ================================================= -->
+
+        <div
+            id="appointmentMessage"
+            class="message hidden"
+        >
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- APPOINTMENT FORM -->
+        <!-- ================================================= -->
+
+        <section
+            id="appointmentFormSection"
+            class="dashboard-card appointment-form-card hidden"
+        >
+
+            <div class="card-heading">
+
+                <div>
+
+                    <h2 id="appointmentFormTitle">
+                        Request Counseling Appointment
+                    </h2>
+
+                    <p id="appointmentFormDescription">
+                        Complete the appointment information below.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="closeAppointmentForm"
+                    class="close-form-button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+
+            <form id="appointmentForm">
+
+
+                <!-- ================================================= -->
+                <!-- STUDENT SELECTOR -->
+                <!-- ================================================= -->
+
+                <div
+                    id="studentSelectGroup"
+                    class="form-group hidden"
+                >
+
+                    <label for="studentSelect">
+                        Student
+                    </label>
+
+                    <select id="studentSelect">
+
+                        <option value="">
+                            Select student
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- ================================================= -->
+                <!-- COUNSELOR + ROOM -->
+                <!-- ================================================= -->
+
+                <div class="form-row">
+
+
+                    <div class="form-group">
+
+                        <label for="counselorSelect">
+                            Counselor
+                        </label>
+
+                        <select
+                            id="counselorSelect"
+                            required
+                        >
+
+                            <option value="">
+                                Select counselor
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label for="roomSelect">
+                            Guidance Room
+                        </label>
+
+                        <select id="roomSelect">
+
+                            <option value="">
+                                No room selected
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- ================================================= -->
+                <!-- DATE + TIME -->
+                <!-- ================================================= -->
+
+                <div class="form-row">
+
+
+                    <div class="form-group">
+
+                        <label for="appointmentDate">
+                            Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="appointmentDate"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label for="startTime">
+                            Start Time
+                        </label>
+
+                        <input
+                            type="time"
+                            id="startTime"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label for="endTime">
+                            End Time
+                        </label>
+
+                        <input
+                            type="time"
+                            id="endTime"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- ================================================= -->
+                <!-- PURPOSE -->
+                <!-- ================================================= -->
+
+                <div class="form-group">
+
+                    <label for="appointmentPurpose">
+                        Purpose
+                    </label>
+
+                    <textarea
+                        id="appointmentPurpose"
+                        rows="4"
+                        placeholder="Briefly state the purpose of the counseling appointment."
+                        required
+                    ></textarea>
+
+                </div>
+
+
+
+                <!-- ================================================= -->
+                <!-- FORM ACTIONS -->
+                <!-- ================================================= -->
+
+                <div class="form-actions">
+
+
+                    <button
+                        type="button"
+                        id="cancelFormButton"
+                        class="btn btn-secondary"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        id="submitAppointmentButton"
+                        class="btn btn-primary"
+                    >
+                        Submit Request
+                    </button>
+
+
+                </div>
+
+
+            </form>
+
+
+        </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- APPOINTMENT LIST -->
+        <!-- ================================================= -->
+
+        <section class="dashboard-card">
+
+
+            <div class="card-heading">
+
+                <div>
+
+                    <h2 id="appointmentListTitle">
+                        Appointments
+                    </h2>
+
+                    <p id="appointmentListDescription">
+                        Counseling appointment records.
+                    </p>
+
+                </div>
+
+
+                <label class="sr-only" for="statusFilter">Filter appointments by status</label>
+                <select id="statusFilter">
+
+                    <option value="">
+                        All Statuses
+                    </option>
+
+                    <option value="REQUESTED">
+                        Requested
+                    </option>
+
+                    <option value="CONFIRMED">
+                        Confirmed
+                    </option>
+
+                    <option value="COMPLETED">
+                        Completed
+                    </option>
+
+                    <option value="CANCELLED">
+                        Cancelled
+                    </option>
+
+                    <option value="NO_SHOW">
+                        No Show
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- APPOINTMENT TABLE -->
+            <!-- ================================================= -->
+
+            <div class="table-wrapper">
+
+
+                <table class="appointment-table">
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th id="studentTableHeading">
+                                Student
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Time
+                            </th>
+
+                            <th>
+                                Counselor
+                            </th>
+
+                            <th>
+                                Room
+                            </th>
+
+                            <th>
+                                Purpose
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+
+                    <tbody id="appointmentTableBody">
+
+                        <tr>
+
+                            <td
+                                colspan="8"
+                                class="empty-table"
+                            >
+                                Loading appointments...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+<!-- ================================================= -->
+<!-- APPOINTMENT CONFIRMATION MODAL -->
+<!-- ================================================= -->
+
+<div id="appointmentConfirmModal" class="confirm-modal hidden">
+    <div class="confirm-modal-backdrop"></div>
+
+    <div class="confirm-modal-card" role="dialog" aria-modal="true"
+         aria-labelledby="confirmModalTitle">
+
+        <div class="confirm-modal-icon" id="confirmModalIcon">
+            ?
+        </div>
+
+        <h2 id="confirmModalTitle">
+            Confirm Action
+        </h2>
+
+        <p id="confirmModalMessage">
+            Are you sure you want to continue?
+        </p>
+
+        <div class="confirm-modal-actions">
+            <button
+                type="button"
+                id="confirmModalCancel"
+                class="btn btn-secondary"
+            >
+                Go Back
+            </button>
+
+            <button
+                type="button"
+                id="confirmModalConfirm"
+                class="btn btn-primary"
+            >
+                Confirm
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ================================================= -->
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/navigation.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/appointments.js') }}"
+></script>
+
+
+{% include "_workspace.html" %}
+</body>
+
+</html>

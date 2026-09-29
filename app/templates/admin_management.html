@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Administration
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+
+<body class="dashboard-body">
+
+
+<div class="dashboard-layout">
+
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+
+        <div class="sidebar-brand">
+
+            <div class="sidebar-logo">
+                GCS
+            </div>
+
+            <div>
+
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <a href="/dashboard">
+                Dashboard
+            </a>
+
+            <a
+                href="/appointments"
+                id="appointmentsNav"
+            >
+                Appointments
+            </a>
+
+            <a
+                href="/cases"
+                id="casesNav"
+            >
+                Cases
+            </a>
+
+            <a
+                href="/referrals"
+                id="referralsNav"
+            >
+                Referrals
+            </a>
+
+            <a
+                href="/manage-exit-questionnaire"
+                id="exitNav"
+            >
+                Exit Questionnaire
+            </a>
+
+            <a
+                href="/clearance"
+                id="clearanceNav"
+            >
+                Clearance
+            </a>
+
+            <a
+                href="/admin-management"
+                id="adminNav"
+                class="active"
+            >
+                Administration
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- ================================================= -->
+    <!-- MAIN -->
+    <!-- ================================================= -->
+
+    <main class="dashboard-main">
+
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    Administration
+                </h1>
+
+                <p>
+                    Manage guidance personnel accounts and counseling rooms.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <div
+            id="adminMessage"
+            class="message hidden"
+        >
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- ACCOUNT MANAGEMENT -->
+        <!-- ================================================= -->
+
+        <section class="dashboard-card">
+
+
+            <div class="card-heading">
+
+                <div>
+
+                    <h2>
+                        Account Management
+                    </h2>
+
+                    <p>
+                        Create and manage guidance personnel accounts.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="openAccountForm"
+                    class="btn btn-primary"
+                >
+                    + Create Account
+                </button>
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- ACCOUNT FORM -->
+            <!-- ================================================= -->
+
+            <div
+                id="accountFormSection"
+                class="hidden"
+            >
+
+                <form id="accountForm">
+
+
+                    <!-- ROLE + EMAIL -->
+
+                    <div class="form-row">
+
+
+                        <div class="form-group">
+
+                            <label for="accountRole">
+                                Role
+                            </label>
+
+                            <select
+                                id="accountRole"
+                                required
+                            >
+
+                                <option value="">
+                                    Select role
+                                </option>
+
+                                <option value="counselor">
+                                    Counselor
+                                </option>
+
+                                <option value="head_counselor">
+                                    Head Counselor
+                                </option>
+
+                                <option value="staff">
+                                    Staff
+                                </option>
+
+                                <option value="admin">
+                                    Administrator
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="accountEmail">
+                                Email
+                            </label>
+
+                            <input
+                                type="email"
+                                id="accountEmail"
+                                placeholder="name@university.edu"
+                                required
+                            >
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- PASSWORD -->
+
+                    <div class="form-group">
+
+                        <label for="accountPassword">
+                            Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="accountPassword"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- ================================================= -->
+                    <!-- PERSONNEL PROFILE FIELDS -->
+                    <!-- ================================================= -->
+                    <!--
+                        These fields are used for:
+                        - Counselor
+                        - Head Counselor
+                        - Staff
+                        - Administrator
+                    -->
+
+                    <div
+                        id="personnelProfileFields"
+                        class="hidden"
+                    >
+
+
+                        <!-- EMPLOYEE NUMBER + SPECIALIZATION -->
+
+                        <div class="form-row">
+
+
+                            <div class="form-group">
+
+                                <label for="employeeNumber">
+                                    Employee Number
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="employeeNumber"
+                                    placeholder="EMP-001"
+                                >
+
+                            </div>
+
+
+
+                            <!--
+                                Only displayed for Counselor
+                                and Head Counselor.
+                            -->
+
+                            <div
+                                class="form-group hidden"
+                                id="specializationField"
+                            >
+
+                                <label for="specialization">
+                                    Specialization
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="specialization"
+                                    placeholder="Student Counseling"
+                                >
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- FIRST NAME + LAST NAME -->
+
+                        <div class="form-row">
+
+
+                            <div class="form-group">
+
+                                <label for="firstName">
+                                    First Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="firstName"
+                                    placeholder="First name"
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="lastName">
+                                    Last Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="lastName"
+                                    placeholder="Last name"
+                                >
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- FORM ACTIONS -->
+
+                    <div class="form-actions">
+
+                        <button
+                            type="button"
+                            id="cancelAccountForm"
+                            class="btn btn-secondary"
+                        >
+                            Cancel
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            id="createAccountButton"
+                            class="btn btn-primary"
+                        >
+                            Create Account
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- ACCOUNT TABLE -->
+            <!-- ================================================= -->
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="accountTableBody">
+
+                        <tr>
+
+                            <td
+                                colspan="5"
+                                class="empty-table"
+                            >
+                                Loading accounts...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- GUIDANCE ROOM MANAGEMENT -->
+        <!-- ================================================= -->
+
+        <section class="dashboard-card">
+
+
+            <div class="card-heading">
+
+                <div>
+
+                    <h2>
+                        Guidance Room Management
+                    </h2>
+
+                    <p>
+                        Add counseling rooms used for appointments.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="openRoomForm"
+                    class="btn btn-primary"
+                >
+                    + Add Room
+                </button>
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- ROOM FORM -->
+            <!-- ================================================= -->
+
+            <div
+                id="roomFormSection"
+                class="hidden"
+            >
+
+                <form id="roomForm">
+
+
+                    <div class="form-row">
+
+
+                        <div class="form-group">
+
+                            <label for="roomName">
+                                Room Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="roomName"
+                                placeholder="Guidance Room 1"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="roomLocation">
+                                Location
+                            </label>
+
+                            <input
+                                type="text"
+                                id="roomLocation"
+                                placeholder="Student Services Building"
+                            >
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <div class="form-actions">
+
+                        <button
+                            type="button"
+                            id="cancelRoomForm"
+                            class="btn btn-secondary"
+                        >
+                            Cancel
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            id="createRoomButton"
+                            class="btn btn-primary"
+                        >
+                            Add Room
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- ROOM TABLE -->
+            <!-- ================================================= -->
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Room</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="roomTableBody">
+
+                        <tr>
+
+                            <td
+                                colspan="3"
+                                class="empty-table"
+                            >
+                                Loading rooms...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/admin_management.js') }}"
+></script>
+
+
+<script src="{{ url_for('static', filename='js/navigation.js') }}"></script>
+{% include "_workspace.html" %}
+</body>
+
+</html>

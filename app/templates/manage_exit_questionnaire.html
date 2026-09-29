@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Manage Exit Questionnaire
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body class="dashboard-body">
+
+<div class="dashboard-layout">
+
+
+    <!-- ==============================================
+         SIDEBAR
+         ============================================== -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo small">
+                GC
+            </div>
+
+            <div>
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <button
+                type="button"
+                class="nav-item"
+                id="dashboardNav"
+                onclick="window.location.href='/dashboard'"
+            >
+                Dashboard
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="appointmentsNav"
+                style="display: none;"
+                onclick="window.location.href='/appointments'"
+            >
+                Appointments
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="casesNav"
+                style="display: none;"
+                onclick="window.location.href='/cases'"
+            >
+                Cases
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="referralsNav"
+                style="display: none;"
+                onclick="window.location.href='/referrals'"
+            >
+                Referrals
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item active"
+                id="exitNav"
+                style="display: none;"
+            >
+                Exit Questionnaire
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="clearanceNav"
+                style="display: none;"
+                onclick="window.location.href='/clearance'"
+            >
+                Clearance
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="adminNav"
+                style="display: none;"
+                onclick="window.location.href='/admin-management'"
+            >
+                Administration
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+                onclick="window.location.href='/dashboard'"
+            >
+                My Profile
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==============================================
+         MAIN CONTENT
+         ============================================== -->
+
+    <main class="main-content">
+
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <h1>
+                    Manage Exit Questionnaire
+                </h1>
+
+                <p>
+                    Create and activate the questionnaire
+                    required for graduating students.
+                </p>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- MESSAGE -->
+
+        <div
+            id="questionnaireMessage"
+            class="message hidden"
+        >
+        </div>
+
+
+
+        <!-- ============================================
+             CURRENT ACTIVE QUESTIONNAIRE
+             ============================================ -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Current Active Questionnaire
+                    </h2>
+
+                    <p>
+                        The questionnaire currently available
+                        to graduating students.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div id="activeQuestionnaireContainer">
+
+                <p>
+                    Loading active questionnaire...
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ============================================
+             CREATE QUESTIONNAIRE
+             ============================================ -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Create New Questionnaire
+                    </h2>
+
+                    <p>
+                        Add the questionnaire title and questions.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form id="questionnaireForm">
+
+
+                <!-- TITLE -->
+
+                <div class="form-group">
+
+                    <label for="questionnaireTitle">
+                        Questionnaire Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="questionnaireTitle"
+                        placeholder="Example: Graduating Student Exit Questionnaire"
+                        maxlength="200"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- QUESTIONS -->
+
+                <div class="question-builder-header">
+
+                    <div>
+
+                        <h3>
+                            Questions
+                        </h3>
+
+                        <p>
+                            Add the questions students must answer.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="addQuestionButton"
+                        class="secondary-button"
+                    >
+                        + Add Question
+                    </button>
+
+                </div>
+
+
+                <div id="questionBuilder">
+
+                </div>
+
+
+
+                <!-- SUBMIT -->
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        id="createQuestionnaireButton"
+                        class="primary-button"
+                    >
+                        Create Questionnaire
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+    </main>
+
+</div>
+
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/navigation.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/manage_exit_questionnaire.js') }}"
+></script>
+
+
+{% include "_workspace.html" %}
+</body>
+
+</html>

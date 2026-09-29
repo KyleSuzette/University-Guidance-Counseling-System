@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Counseling Cases | Guidance & Counseling
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body class="dashboard-body">
+
+
+<div class="dashboard-layout">
+
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+
+        <!-- BRAND -->
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo small">
+                GC
+            </div>
+
+            <div>
+
+                <strong>
+                    Guidance
+                </strong>
+
+                <span>
+                    Counseling System
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- NAVIGATION -->
+        <!-- ================================================= -->
+
+        <nav class="sidebar-nav">
+
+
+            <!-- DASHBOARD -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="dashboardNav"
+            >
+                Dashboard
+            </button>
+
+
+            <!-- APPOINTMENTS -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="appointmentsNav"
+            >
+                Appointments
+            </button>
+
+
+            <!-- CASES -->
+            <!-- Current page -->
+
+            <button
+                type="button"
+                class="nav-item active"
+                id="casesNav"
+                style="display: none;"
+            >
+                Cases
+            </button>
+
+
+            <!-- REFERRALS -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="referralsNav"
+                style="display: none;"
+            >
+                Referrals
+            </button>
+
+
+            <!-- EXIT QUESTIONNAIRE -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="exitNav"
+                style="display: none;"
+            >
+                Exit Questionnaire
+            </button>
+
+
+            <!-- CLEARANCE -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="clearanceNav"
+                style="display: none;"
+            >
+                Clearance
+            </button>
+
+
+            <!-- ADMINISTRATION -->
+
+            <button
+                type="button"
+                class="nav-item"
+                id="adminNav"
+                style="display: none;"
+            >
+                Administration
+            </button>
+
+
+        </nav>
+
+
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR BOTTOM -->
+        <!-- ================================================= -->
+
+        <div class="sidebar-bottom">
+
+
+            <button
+                type="button"
+                class="nav-item"
+                id="profileButton"
+            >
+                My Profile
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item logout-item"
+                id="logoutButton"
+            >
+                Sign Out
+            </button>
+
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- ================================================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================= -->
+
+    <main class="main-content">
+
+
+        <!-- ================================================= -->
+        <!-- PAGE HEADER -->
+        <!-- ================================================= -->
+
+        <header class="dashboard-header">
+
+            <div>
+
+                <h1>
+                    Counseling Cases
+                </h1>
+
+                <p>
+                    View your counseling case information
+                    and current progress.
+                </p>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ================================================= -->
+        <!-- MESSAGE -->
+        <!-- ================================================= -->
+
+        <div
+            id="casesMessage"
+            class="message hidden"
+        >
+        </div>
+
+
+
+        <!-- ================================================= -->
+        <!-- CASE LIST -->
+        <!-- ================================================= -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2 id="caseListTitle">
+                        Cases
+                    </h2>
+
+                    <p id="caseListDescription">
+                        Counseling case records.
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <label class="sr-only" for="caseStatusFilter">Filter cases by status</label>
+                    <select id="caseStatusFilter">
+
+                        <option value="">
+                            All Statuses
+                        </option>
+
+                        <option value="INTAKE">
+                            Intake
+                        </option>
+
+                        <option value="ACTIVE">
+                            Active
+                        </option>
+
+                        <option value="FOLLOW_UP">
+                            Follow Up
+                        </option>
+
+                        <option value="CLOSED">
+                            Closed
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+
+            <div
+                id="casesContainer"
+                class="cases-container"
+            >
+
+                <p>
+                    Loading cases...
+                </p>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- ================================================= -->
+        <!-- CASE LIFECYCLE -->
+        <!-- ================================================= -->
+
+        <section class="panel workflow-panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Case Progression
+                    </h2>
+
+                    <p>
+                        Standard counseling case lifecycle.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="case-lifecycle">
+
+
+                <!-- INTAKE -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        1
+                    </span>
+
+                    <strong>
+                        INTAKE
+                    </strong>
+
+                </div>
+
+
+                <span class="lifecycle-arrow">
+                    →
+                </span>
+
+
+
+                <!-- ACTIVE -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        2
+                    </span>
+
+                    <strong>
+                        ACTIVE
+                    </strong>
+
+                </div>
+
+
+                <span class="lifecycle-arrow">
+                    →
+                </span>
+
+
+
+                <!-- FOLLOW UP -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        3
+                    </span>
+
+                    <strong>
+                        FOLLOW UP
+                    </strong>
+
+                </div>
+
+
+                <span class="lifecycle-arrow">
+                    →
+                </span>
+
+
+
+                <!-- CLOSED -->
+
+                <div class="lifecycle-step">
+
+                    <span class="step-number">
+                        4
+                    </span>
+
+                    <strong>
+                        CLOSED
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+
+<!-- ================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ================================================= -->
+
+<script
+    src="{{ url_for('static', filename='js/api.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/navigation.js') }}"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/cases.js') }}"
+></script>
+
+
+{% include "_workspace.html" %}
+</body>
+
+</html>
