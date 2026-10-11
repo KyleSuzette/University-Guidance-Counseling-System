@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -23,9 +23,7 @@
 
         <section class="auth-brand">
 
-            <div class="brand-logo">
-                GC
-            </div>
+            <div class="brand-logo"><img src="{{ url_for('static', filename='images/nu-logo.png') }}" alt="National University Logo" class="nu-logo"></div>
 
             <h1>
                 Student
@@ -245,13 +243,8 @@
 
                 </div>
 
-
-                <button
-                    type="submit"
-                    id="registerSubmitButton"
-                    class="btn btn-primary btn-full"
-                >
-                    Create Student Account
+                <button type="submit" id="registerSubmitButton" class="btn btn-primary btn-full">
+                    Send Verification Code
                 </button>
 
             </form>

@@ -48,6 +48,10 @@ def create_app(config_object=None):
     @app.get("/register")
     def register_page():
         return render_template("register.html")
+    
+    @app.get("/verify-otp")
+    def verify_otp_page():
+        return render_template("otp_verify.html")
 
     @app.get("/dashboard")
     def dashboard_page():

@@ -8,6 +8,7 @@ from ..models import (
     CounselorProfile,
     Room,
     StaffProfile,
+    StudentProfile,
     User,
 )
 from ..utils import (
@@ -417,6 +418,205 @@ def set_account_active(user_id):
         user=target.public_dict()
     )
 
+
+# =========================================================
+# UPDATE USER PERSONAL INFORMATION
+# =========================================================
+
+@admin_bp.patch("/admin/accounts/<int:user_id>/profile")
+@roles_required(UserRole.ADMIN)
+def update_account_profile(user_id):
+    actor = current_user()
+    target = db.session.get(User, user_id)
+
+    if not target:
+        return error(
+            "Account not found.",
+            404,
+            "not_found"
+        )
+
+    # Identify the profile associated with the account.
+    if target.role == UserRole.STUDENT:
+        profile = target.student_profile
+
+    elif target.role in {
+        UserRole.COUNSELOR,
+        UserRole.HEAD_COUNSELOR,
+    }:
+        profile = target.counselor_profile
+
+    elif target.role in {
+        UserRole.STAFF,
+        UserRole.ADMIN,
+    }:
+        profile = target.staff_profile
+
+    else:
+        return error(
+            "Unsupported account role.",
+            400,
+            "unsupported_role"
+        )
+
+    if profile is None:
+        return error(
+            "The selected account has no profile record.",
+            404,
+            "profile_not_found"
+        )
+
+    
+    # Define editable fields based on the user's role.
+    if target.role == UserRole.STUDENT:
+        allowed_fields = {
+            "student_number": 50,
+            "first_name": 100,
+            "last_name": 100,
+            "program": 150,
+            "year_level": None,
+            "contact_number": 30,
+        }
+
+    elif target.role in {
+        UserRole.COUNSELOR,
+        UserRole.HEAD_COUNSELOR,
+    }:
+        allowed_fields = {
+            "employee_number": 50,
+            "first_name": 100,
+            "last_name": 100,
+            "specialization": 150,
+        }
+
+    else:
+        allowed_fields = {
+            "employee_number": 50,
+            "first_name": 100,
+            "last_name": 100,
+        }
+
+    data, failure = json_body()
+    if failure:
+        return failure
+
+    if not data:
+        return error("Provide at least one profile field.")
+
+    unknown_fields = set(data) - set(allowed_fields)
+
+    if unknown_fields:
+        return error(
+            "Unsupported profile fields: "
+            + ", ".join(sorted(unknown_fields))
+        )
+
+    updates = {}
+
+    for field, max_length in allowed_fields.items():
+        if field not in data:
+            continue
+
+        if field == "year_level":
+            value = data[field]
+
+            if isinstance(value, bool) or not isinstance(value, int):
+                return error(
+                    "year_level must be a whole number from 1 to 8."
+                )
+
+            if not 1 <= value <= 8:
+                return error(
+                    "year_level must be a whole number from 1 to 8."
+                )
+
+        else:
+            optional = field in {
+                "contact_number",
+                "specialization",
+            }
+
+            value, problem = clean_text(
+                data[field],
+                field,
+                max_length=max_length,
+                required=not optional,
+            )
+
+            if problem:
+                return error(problem)
+
+            if field in {
+                "student_number",
+                "employee_number",
+            }:
+                value = value.upper()
+
+        updates[field] = value
+    
+    # Employee numbers must be unique across both
+    # Counselor and Staff/Admin profile tables.
+    if "employee_number" in updates:
+        new_number = updates["employee_number"]
+
+        counselor_match = db.session.scalar(
+            db.select(CounselorProfile).where(
+                CounselorProfile.employee_number == new_number
+            )
+        )
+
+        staff_match = db.session.scalar(
+            db.select(StaffProfile).where(
+                StaffProfile.employee_number == new_number
+            )
+        )
+
+        if (
+            counselor_match is not None
+            and not (
+                isinstance(profile, CounselorProfile)
+                and counselor_match.id == profile.id
+            )
+        ) or (
+            staff_match is not None
+            and not (
+                isinstance(profile, StaffProfile)
+                and staff_match.id == profile.id
+            )
+        ):
+            return error(
+                "Employee number is already registered "
+                "to another account.",
+                409,
+                "duplicate_employee_number"
+            )
+    # Apply the validated profile changes.
+    for field, value in updates.items():
+        setattr(profile, field, value)
+
+    audit(
+        "ACCOUNT_PROFILE_UPDATED",
+        "user",
+        target.id,
+        actor.id,
+        {"fields": sorted(updates.keys())}
+    )
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return error(
+            "The student or employee number is already in use.",
+            409,
+            "duplicate_identifier"
+        )
+
+    return jsonify(
+        message="Account personal information updated successfully.",
+        user=target.public_dict(),
+        profile=profile.to_dict(),
+    ), 200
 
 # =========================================================
 # CREATE GUIDANCE ROOM

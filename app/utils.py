@@ -1,5 +1,7 @@
 import base64
+import os
 import hashlib
+import hmac
 import re
 import secrets
 from datetime import datetime, timezone
@@ -7,11 +9,11 @@ from functools import wraps
 
 from cryptography.fernet import Fernet, InvalidToken
 from flask import current_app, jsonify, request
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import get_jwt,get_jwt_identity, verify_jwt_in_request
 
 from .enums import UserRole
 from .extensions import db
-from .models import AuditLog, User
+from .models import AccountSettings, AuditLog, User
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -112,32 +114,92 @@ def active_user_required(fn):
     @wraps(fn)
     def wrapped(*args, **kwargs):
         verify_jwt_in_request()
+
         user = current_user()
+
         if not user or not user.is_active:
-            return error("Account is inactive or unavailable.", 403, "account_inactive")
+            return error(
+                "Account is inactive or unavailable.",
+                403,
+                "account_inactive"
+            )
+
+        # Verify that the token belongs to the current
+        # account session version.
+        settings = db.session.get(AccountSettings, user.id)
+
+        current_version = (
+            settings.session_version
+            if settings
+            else 0
+        )
+
+        token_version = get_jwt().get("session_version")
+
+        if token_version != current_version:
+            return error(
+                "Your session is no longer valid. "
+                "Please sign in again.",
+                401,
+                "session_expired"
+            )
+
         return fn(*args, **kwargs)
 
     return wrapped
 
-
 def roles_required(*roles):
-    accepted = {role.value if isinstance(role, UserRole) else str(role) for role in roles}
+    accepted = {
+        role.value if isinstance(role, UserRole) else str(role)
+        for role in roles
+    }
 
     def decorator(fn):
         @wraps(fn)
         def wrapped(*args, **kwargs):
             verify_jwt_in_request()
+
             user = current_user()
+
             if not user or not user.is_active:
-                return error("Account is inactive or unavailable.", 403, "account_inactive")
+                return error(
+                    "Account is inactive or unavailable.",
+                    403,
+                    "account_inactive"
+                )
+
+            # Verify the JWT's session version against
+            # the user's current database session version.
+            settings = db.session.get(AccountSettings, user.id)
+
+            current_version = (
+                settings.session_version
+                if settings
+                else 0
+            )
+
+            token_version = get_jwt().get("session_version")
+
+            if token_version != current_version:
+                return error(
+                    "Your session is no longer valid. "
+                    "Please sign in again.",
+                    401,
+                    "session_expired"
+                )
+
             if user.role.value not in accepted:
-                return error("You do not have permission to perform this action.", 403, "forbidden")
+                return error(
+                    "You do not have permission to perform this action.",
+                    403,
+                    "forbidden"
+                )
+
             return fn(*args, **kwargs)
 
         return wrapped
 
     return decorator
-
 
 def audit(action, entity_type, entity_id=None, actor_user_id=None, metadata=None):
     db.session.add(
@@ -161,20 +223,262 @@ def _fernet():
     return Fernet(key)
 
 
+
+NOTE_V2_PREFIX = b"v2:"
+
+
+def _new_notes_fernet():
+    key = current_app.config.get("NEW_NOTES_ENCRYPTION_KEY")
+
+    if not key:
+        raise RuntimeError(
+            "NEW_NOTES_ENCRYPTION_KEY is not configured."
+        )
+
+    return Fernet(
+        key.encode() if isinstance(key, str) else key
+    )
+
+
 def encrypt_note(plaintext):
-    return _fernet().encrypt(plaintext.encode("utf-8"))
+    if not isinstance(plaintext, str):
+        raise ValueError("Progress note must be text.")
+
+    encrypted = _new_notes_fernet().encrypt(
+        plaintext.encode("utf-8")
+    )
+
+    return NOTE_V2_PREFIX + encrypted
 
 
 def decrypt_note(ciphertext):
+    if ciphertext is None:
+        raise ValueError("Encrypted progress note is missing.")
+
+    ciphertext = bytes(ciphertext)
+
+    # New notes use the separately configured v2 key.
+    if ciphertext.startswith(NOTE_V2_PREFIX):
+        try:
+            return _new_notes_fernet().decrypt(
+                ciphertext[len(NOTE_V2_PREFIX):]
+            ).decode("utf-8")
+        except InvalidToken as exc:
+            raise RuntimeError(
+                "The progress note could not be decrypted "
+                "with the new notes encryption key."
+            ) from exc
+
+    # Historical notes remain encrypted with their
+    # original, currently unidentified key.
+    # Do not change or overwrite their ciphertext.
+    raise RuntimeError(
+        "This historical progress note requires its "
+        "original encryption key, which has not yet "
+        "been recovered."
+    )
+
+
+def _closure_fernet():
+    key = current_app.config.get("CLOSURE_ENCRYPTION_KEY")
+
+    if not key:
+        raise RuntimeError(
+            "CLOSURE_ENCRYPTION_KEY is not configured."
+        )
+
+    return Fernet(
+        key.encode() if isinstance(key, str) else key
+    )
+
+
+def encrypt_closure(plaintext):
+    if plaintext is None:
+        return None
+
+    encrypted = _closure_fernet().encrypt(
+        plaintext.encode("utf-8")
+    )
+
+    # Return text because the Supabase columns use TEXT.
+    return encrypted.decode("ascii")
+
+
+def decrypt_closure(ciphertext):
+    if ciphertext is None:
+        return None
+
     try:
-        return _fernet().decrypt(ciphertext).decode("utf-8")
+        return _closure_fernet().decrypt(
+            ciphertext.encode("ascii")
+            if isinstance(ciphertext, str)
+            else ciphertext
+        ).decode("utf-8")
+
     except InvalidToken as exc:
-        raise RuntimeError("Progress note could not be decrypted with the configured key.") from exc
+        raise RuntimeError(
+            "Closure information could not be decrypted "
+            "with the configured key."
+        ) from exc
+
+
+def _student_summary_fernet():
+    key = current_app.config.get(
+        "STUDENT_SUMMARY_ENCRYPTION_KEY"
+    )
+
+    if not key:
+        raise RuntimeError(
+            "STUDENT_SUMMARY_ENCRYPTION_KEY is not configured."
+        )
+
+    return Fernet(
+        key.encode() if isinstance(key, str) else key
+    )
+
+
+def encrypt_student_summary(plaintext):
+    if not isinstance(plaintext, str):
+        raise ValueError("Student summary must be text.")
+
+    encrypted = _student_summary_fernet().encrypt(
+        plaintext.encode("utf-8")
+    )
+
+    return encrypted.decode("ascii")
+
+
+def decrypt_student_summary(ciphertext):
+    if ciphertext is None:
+        return None
+
+    try:
+        return _student_summary_fernet().decrypt(
+            ciphertext.encode("ascii")
+            if isinstance(ciphertext, str)
+            else ciphertext
+        ).decode("utf-8")
+
+    except InvalidToken as exc:
+        raise RuntimeError(
+            "Student summary could not be decrypted "
+            "with the configured encryption key."
+        ) from exc
+
 
 
 def tracking_code(prefix):
     return f"{prefix}-{datetime.now(timezone.utc):%Y%m%d}-{secrets.token_hex(4).upper()}"
 
+
+# =========================================================
+# ANONYMOUS REFERRAL — KEYED IDENTITY HASHING
+# =========================================================
+
+def referral_identity_hash(identity, identity_type):
+    """
+    Produce a non-reversible, keyed reference.
+
+    identity_type separates reporter and referred-student
+    hashes so their references cannot be confused.
+    """
+
+    if identity_type not in {"reporter", "subject"}:
+        raise ValueError("Invalid referral identity type.")
+
+    if not isinstance(identity, str) or not identity.strip():
+        raise ValueError("Identity reference is required.")
+
+    key = (
+    current_app.config.get("REFERRAL_HASH_KEY")
+    or os.environ.get("REFERRAL_HASH_KEY")
+)
+
+    if not key or len(key) < 32:
+        raise RuntimeError(
+            "REFERRAL_HASH_KEY must be configured "
+            "with at least 32 characters."
+        )
+
+    normalized = " ".join(
+        identity.strip().casefold().split()
+    )
+
+    message = (
+        f"referral-v1:{identity_type}:{normalized}"
+    ).encode("utf-8")
+
+    return hmac.new(
+        key.encode("utf-8") if isinstance(key, str) else key,
+        message,
+        hashlib.sha256
+    ).hexdigest()
+
+def generate_anonymous_reporter_reference():
+    """
+    Create a random anonymous reference and hash it.
+
+    This does not reveal or represent the reporter's
+    real identity.
+    """
+
+    random_reference = secrets.token_urlsafe(32)
+
+    return referral_identity_hash(
+        random_reference,
+        "reporter"
+    )
+
+
+# =========================================================
+# REFERRAL IDENTITY ENCRYPTION
+# =========================================================
+
+def encrypt_referral_identity(value):
+    """
+    Encrypt identifying information before database storage.
+    """
+
+    if value is None:
+        return None
+
+    key = current_app.config.get("REFERRAL_ENCRYPTION_KEY")
+
+    if not key:
+        raise RuntimeError(
+            "REFERRAL_ENCRYPTION_KEY is not configured."
+        )
+
+    cipher = Fernet(key)
+
+    return cipher.encrypt(
+        str(value).encode("utf-8")
+    ).decode("utf-8")
+
+
+def decrypt_referral_identity(encrypted_value):
+    """
+    Decrypt identifying information.
+
+    Call this only from an appropriately
+    authorized backend endpoint.
+    """
+
+    if encrypted_value is None:
+        return None
+
+    key = current_app.config.get("REFERRAL_ENCRYPTION_KEY")
+
+    if not key:
+        raise RuntimeError(
+            "REFERRAL_ENCRYPTION_KEY is not configured."
+        )
+
+    cipher = Fernet(key)
+
+    return cipher.decrypt(
+        encrypted_value.encode("utf-8")
+    ).decode("utf-8")
 
 def page_args():
     try:

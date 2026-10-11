@@ -1,3 +1,4 @@
+
 from enum import Enum
 
 
@@ -31,6 +32,8 @@ class CaseStatus(StrEnum):
     INTAKE = "INTAKE"
     ACTIVE = "ACTIVE"
     FOLLOW_UP = "FOLLOW_UP"
+    PENDING_CLOSURE = "PENDING_CLOSURE"
+    REVISION_REQUIRED = "REVISION_REQUIRED"
     CLOSED = "CLOSED"
 
 
@@ -46,3 +49,12 @@ class ClearanceStatus(StrEnum):
     NOT_CLEARED = "NOT_CLEARED"
     CLEARED = "CLEARED"
 
+class ClearanceAccessStatus(StrEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+class ExitReviewStatus(StrEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    RETURNED = "RETURNED"

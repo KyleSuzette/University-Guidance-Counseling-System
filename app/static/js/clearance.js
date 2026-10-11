@@ -176,6 +176,7 @@ document.addEventListener(
         } else if (
             currentRole === "staff" ||
             currentRole === "admin" ||
+            currentRole === "counselor" ||
             currentRole === "head_counselor"
         ) {
 
@@ -304,9 +305,37 @@ document.addEventListener(
                 true;
 
 
+            const accessStatus = clearance.access_status || "PENDING";
+            const historical = clearance.workflow_version === 1;
+            const accessLabel = accessStatus === "APPROVED"
+                ? "Approved"
+                : accessStatus === "REJECTED" ? "Rejected" : "Pending review";
+            const accessNotice = historical
+                ? "This historical clearance uses the previous process."
+                : accessStatus === "APPROVED"
+                    ? "Your clearance access is approved. You may now open the Exit Questionnaire."
+                    : accessStatus === "REJECTED"
+                        ? "Your access request was rejected. Review the feedback and resubmit if needed."
+                        : "Your request is awaiting approval from Guidance personnel.";
+            const accessPanel = `
+                <div class="clearance-info-row">
+                    <span>Clearance access</span>
+                    <strong>${escapeHtml(historical ? "Historical record" : accessLabel)}</strong>
+                </div>
+                <p style="margin:12px 0;line-height:1.6">${escapeHtml(accessNotice)}</p>
+                ${!historical && clearance.access_review_remarks ? `
+                    <div class="clearance-remarks"><strong>Access review feedback</strong>
+                    <p>${escapeHtml(clearance.access_review_remarks)}</p></div>` : ""}
+                ${!historical && accessStatus === "APPROVED" && status !== "CLEARED" ? `
+                    <div class="clearance-actions"><a class="primary-button" style="display:inline-block;text-decoration:none" href="/exit-questionnaire">Open Exit Questionnaire</a></div>` : ""}
+                ${!historical && accessStatus === "REJECTED" && status !== "CLEARED" ? `
+                    <div class="clearance-actions"><button type="button" id="resubmitClearanceAccessButton" class="primary-button">Resubmit Access Request</button></div>` : ""}
+            `;
+
             studentContainer.innerHTML = `
 
                 <div class="clearance-status-card">
+                    ${accessPanel}
 
 
                     <div class="clearance-main-status">
@@ -476,6 +505,23 @@ document.addEventListener(
             `;
 
 
+
+            const resubmitButton = document.getElementById("resubmitClearanceAccessButton");
+            resubmitButton?.addEventListener("click", async () => {
+                resubmitButton.disabled = true;
+                resubmitButton.textContent = "Resubmitting...";
+                try {
+                    await apiRequest(`/clearances/${clearance.id}/resubmit-access`, {
+                        method: "POST"
+                    });
+                    showMessage("Your request has been resubmitted for review.", "success");
+                    await loadStudentClearance();
+                } catch (err) {
+                    showMessage(err?.data?.message || "Unable to resubmit access request.", "error");
+                    resubmitButton.disabled = false;
+                    resubmitButton.textContent = "Resubmit Access Request";
+                }
+            });
 
             const printButton =
                 document.getElementById(
@@ -681,11 +727,477 @@ document.addEventListener(
 
 
             bindEvaluationEvents();
+            installExitReviewButtons();
+            installClearanceAccessButtons();
 
         }
 
+        // =====================================================
+        // EXIT QUESTIONNAIRE REVIEW
+        // =====================================================
+
+        function installExitReviewButtons() {
+            const canReview = [
+                "staff",
+                "counselor",
+                "head_counselor"
+            ].includes(currentUser?.role);
+
+            if (!canReview) return;
+
+            evaluationContainer
+                .querySelectorAll(".clearance-evaluation-card")
+                .forEach(card => {
+                    const clearanceId =
+                        Number(card.dataset.clearanceId);
+
+                    const clearance = clearanceRecords.find(
+                        item => item.id === clearanceId
+                    );
+
+                    if (!clearance || !clearance.student_id) {
+                        return;
+                    }
+
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "secondary-button";
+                    button.textContent = "Review Exit Questionnaire";
+                    button.style.marginTop = "16px";
+
+                    button.addEventListener("click", async () => {
+                        button.disabled = true;
+
+                        try {
+                            await openExitReview(clearance);
+                        } catch (error) {
+                            showMessage(
+                                error?.data?.message ||
+                                error?.message ||
+                                "Unable to load questionnaire submissions.",
+                                "error"
+                            );
+                        } finally {
+                            button.disabled = false;
+                        }
+                    });
+
+                    card.appendChild(button);
+                });
+        }
+
+        async function openExitReview(clearance) {
+            const response = await apiRequest(
+                `/exit-submissions/${clearance.student_id}`
+            );
+
+            const submissions = (response.items || []).filter(
+                item =>
+                    item.clearance_id === clearance.id &&
+                    item.completed === true
+            );
+
+            if (!submissions.length) {
+            const card = evaluationContainer.querySelector(
+                `.clearance-evaluation-card[data-clearance-id="${clearance.id}"]`
+            );
+
+            if (card) {
+                let notice = card.querySelector(".exit-review-notice");
+
+                if (!notice) {
+                    notice = document.createElement("p");
+                    notice.className = "exit-review-notice";
+                    notice.style.padding = "12px";
+                    notice.style.marginTop = "12px";
+                    notice.style.borderRadius = "8px";
+                    notice.style.background = "#fef2f2";
+                    notice.style.color = "#b91c1c";
+                    card.appendChild(notice);
+                }
+
+                notice.textContent =
+                    "No submitted Exit Questionnaire exists for this clearance.";
+            }
+
+            return;
+        }
+
+            // Keep the selection explicit if multiple old
+            // questionnaire versions are associated with a clearance.
+            const pending = submissions.find(
+                item => item.review_status === "PENDING"
+            );
+
+            const selected = pending || submissions[0];
+
+            const result = await apiRequest(
+                `/exit-submissions/${selected.id}/review`
+            );
+
+            const submission = result.submission;
+
+            let dialog = document.getElementById("exitReviewDialog");
+
+            if (!dialog) {
+                dialog = document.createElement("dialog");
+                dialog.id = "exitReviewDialog";
+                dialog.className = "workspace-dialog";
+                document.body.appendChild(dialog);
+            }
+
+            dialog.replaceChildren();
+
+            const heading = document.createElement("h2");
+            heading.textContent = "Student Exit Questionnaire Review";
+            dialog.appendChild(heading);
+
+            const details = document.createElement("p");
+            details.textContent =
+                `Academic Year: ${submission.academic_year} | ` +
+                `Questionnaire: ${submission.questionnaire_id} | ` +
+                `Status: ${submission.review_status}`;
+            dialog.appendChild(details);
+
+            const answers = document.createElement("div");
+
+            (submission.answers || []).forEach((answer, index) => {
+                const item = document.createElement("div");
+                item.style.margin = "18px 0";
+
+                const prompt = document.createElement("strong");
+                prompt.textContent =
+                    `${index + 1}. ${answer.prompt}`;
+
+                const responseText = document.createElement("p");
+                responseText.textContent =
+                    answer.answer || "(No answer)";
+                responseText.style.whiteSpace = "pre-wrap";
+                responseText.style.marginTop = "8px";
+
+                item.append(prompt, responseText);
+                answers.appendChild(item);
+            });
+
+            dialog.appendChild(answers);
+
+            const remarks = document.createElement("textarea");
+            remarks.placeholder = "Reviewer remarks";
+            remarks.maxLength = 500;
+            remarks.rows = 3;
+            remarks.style.width = "100%";
+            remarks.style.padding = "12px";
+            remarks.value = submission.review_remarks || "";
+            dialog.appendChild(remarks);
+
+            const actions = document.createElement("div");
+            actions.style.display = "flex";
+            actions.style.flexWrap = "wrap";
+            actions.style.gap = "10px";
+            actions.style.marginTop = "18px";
+
+            const close = document.createElement("button");
+            close.type = "button";
+            close.className = "secondary-button";
+            close.textContent = "Close";
+            close.onclick = () => dialog.close();
+            actions.appendChild(close);
+
+            if (submission.review_status === "PENDING") {
+                for (const [label, approve] of [
+                    ["Approve Questionnaire", true],
+                    ["Return for Correction", false]
+                ]) {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = approve
+                        ? "primary-button"
+                        : "secondary-button";
+                    button.textContent = label;
+
+                    
+                    button.onclick = async () => {
+                        const text = remarks.value.trim();
+
+                        if (!approve && !text) {
+                            remarks.focus();
+                            remarks.placeholder =
+                                "Remarks are required when returning a questionnaire.";
+                            return;
+                        }
+
+                        // First click: show confirmation inside the dialog.
+                        if (button.dataset.confirming !== "true") {
+                            actions.querySelectorAll("button").forEach(other => {
+                                other.dataset.confirming = "false";
+
+                                if (other.textContent.startsWith("Confirm ")) {
+                                    other.textContent =
+                                        other.dataset.originalLabel || other.textContent;
+                                }
+                            });
+
+                            button.dataset.originalLabel = label;
+                            button.dataset.confirming = "true";
+                            button.textContent = approve
+                                ? "Confirm Approve Questionnaire"
+                                : "Confirm Return for Correction";
+
+                            return;
+                        }
+
+                        // Second click: save the review decision.
+                        actions.querySelectorAll("button").forEach(other => {
+                            other.disabled = true;
+                        });
+
+                        try {
+                            await apiRequest(
+                                `/exit-submissions/${submission.id}/evaluate`,
+                                {
+                                    method: "PATCH",
+                                    body: JSON.stringify({
+                                        approve: approve,
+                                        remarks: text
+                                    })
+                                }
+                            );
+
+                            const resultMessage = document.createElement("p");
+                            resultMessage.textContent = approve
+                                ? "Questionnaire approved successfully."
+                                : "Questionnaire returned for correction.";
+
+                            resultMessage.style.padding = "12px";
+                            resultMessage.style.marginTop = "12px";
+                            resultMessage.style.borderRadius = "8px";
+                            resultMessage.style.background = "#f3e8ff";
+                            resultMessage.style.color = "#5b21b6";
+
+                            actions.before(resultMessage);
+
+                            // Keep the Close button available.
+                            actions.querySelectorAll("button").forEach(other => {
+                                other.hidden = other !== close;
+                                other.disabled = false;
+                            });
+
+                            await loadClearanceRecords();
+
+                        } catch (error) {
+                            let errorMessage = dialog.querySelector(
+                                ".exit-review-error"
+                            );
+
+                            if (!errorMessage) {
+                                errorMessage = document.createElement("p");
+                                errorMessage.className = "exit-review-error";
+                                errorMessage.style.color = "#b91c1c";
+                                errorMessage.style.marginTop = "12px";
+                                actions.before(errorMessage);
+                            }
+
+                            errorMessage.textContent =
+                                error?.data?.message ||
+                                error?.message ||
+                                "Unable to save questionnaire review.";
+
+                            actions.querySelectorAll("button").forEach(other => {
+                                other.disabled = false;
+                            });
+
+                            button.dataset.confirming = "false";
+                            button.textContent = label;
+                        }
+                    };
 
 
+                    actions.appendChild(button);
+                }
+            }
+
+            dialog.appendChild(actions);
+            dialog.showModal();
+        }
+        
+        // =====================================================
+        // CLEARANCE ACCESS APPROVAL
+        // =====================================================
+
+        function installClearanceAccessButtons() {
+
+            const canReviewAccess = [
+                "staff",
+                "counselor",
+                "head_counselor"
+            ].includes(currentRole);
+
+            if (!canReviewAccess) return;
+
+            evaluationContainer
+                .querySelectorAll(".clearance-evaluation-card")
+                .forEach(card => {
+
+                    const clearanceId =
+                        Number(card.dataset.clearanceId);
+
+                    const clearance = clearanceRecords.find(
+                        item => Number(item.id) === clearanceId
+                    );
+
+                    if (
+                        !clearance ||
+                        Number(clearance.workflow_version) !== 2
+                    ) {
+                        return;
+                    }
+
+                    const section = document.createElement("div");
+                    section.style.marginTop = "16px";
+                    section.style.padding = "16px";
+                    section.style.border = "1px solid #e9dff5";
+                    section.style.borderRadius = "12px";
+
+                    const heading = document.createElement("strong");
+                    heading.textContent = "Clearance Access Request";
+
+                    const status = document.createElement("p");
+                    status.style.margin = "8px 0";
+                    status.textContent =
+                        "Access status: " +
+                        (clearance.access_status || "PENDING");
+
+                    section.append(heading, status);
+
+                    if (clearance.access_status === "PENDING") {
+
+                        const actions = document.createElement("div");
+                        actions.style.display = "flex";
+                        actions.style.gap = "10px";
+                        actions.style.flexWrap = "wrap";
+
+                        for (const [label, approve] of [
+                            ["Approve Access", true],
+                            ["Reject Access", false]
+                        ]) {
+
+                            const button =
+                                document.createElement("button");
+
+                            button.type = "button";
+                            button.className = approve
+                                ? "primary-button"
+                                : "secondary-button";
+                            button.textContent = label;
+                            
+                            button.addEventListener("click", async () => {
+
+                                let remarks = "";
+
+                                // Require two clicks for approval:
+                                // first to select, second to confirm.
+                                if (approve && button.dataset.confirmed !== "true") {
+                                    button.dataset.confirmed = "true";
+                                    button.textContent = "Confirm Approve Access";
+
+                                    status.textContent =
+                                        "Confirm that this Student should receive clearance access.";
+
+                                    return;
+                                }
+
+                                // Show an inline remarks field for rejection.
+                                if (!approve) {
+                                    let remarksInput = section.querySelector(
+                                        ".access-rejection-remarks"
+                                    );
+
+                                    if (!remarksInput) {
+                                        remarksInput = document.createElement("textarea");
+                                        remarksInput.className = "access-rejection-remarks";
+                                        remarksInput.placeholder =
+                                            "Enter the reason for rejecting access...";
+                                        remarksInput.rows = 3;
+                                        remarksInput.maxLength = 500;
+                                        remarksInput.style.width = "100%";
+                                        remarksInput.style.padding = "12px";
+                                        remarksInput.style.marginTop = "12px";
+
+                                        section.appendChild(remarksInput);
+
+                                        button.textContent = "Confirm Reject Access";
+                                        remarksInput.focus();
+                                        return;
+                                    }
+
+                                    remarks = remarksInput.value.trim();
+
+                                    if (!remarks) {
+                                        status.textContent =
+                                            "Please enter a reason for rejecting access.";
+                                        remarksInput.focus();
+                                        return;
+                                    }
+                                }
+
+                                actions.querySelectorAll("button").forEach(
+                                    item => item.disabled = true
+                                );
+
+                                try {
+                                    await apiRequest(
+                                        `/clearances/${clearanceId}/access`,
+                                        {
+                                            method: "PATCH",
+                                            body: JSON.stringify({
+                                                approve: approve,
+                                                remarks: remarks
+                                            })
+                                        }
+                                    );
+
+                                    // Refresh the existing clearance record.
+                                    // The section will now display APPROVED or REJECTED.
+                                    await loadClearanceRecords();
+
+                                    showMessage(
+                                        approve
+                                            ? "Clearance access approved successfully."
+                                            : "Clearance access rejected successfully.",
+                                        "success"
+                                    );
+
+                                } catch (error) {
+                                    status.textContent =
+                                        error?.data?.message ||
+                                        error?.message ||
+                                        "Unable to update clearance access.";
+
+                                    status.style.color = "#c0392b";
+
+                                    actions.querySelectorAll("button").forEach(
+                                        item => item.disabled = false
+                                    );
+                                }
+                            });
+
+                            actions.appendChild(button);
+                        }
+
+                        section.appendChild(actions);
+                    }
+
+                    const evaluationForm = card.querySelector(
+                        ".clearance-evaluation-form"
+                    );
+
+                    if (evaluationForm) {
+                        evaluationForm.before(section);
+                    } else {
+                        card.appendChild(section);
+                    }
+                });
+        }
         // =====================================================
         // EVALUATION CARD
         // =====================================================
@@ -715,6 +1227,7 @@ document.addEventListener(
 
 
             const allRequirementsComplete =
+                (clearance.workflow_version === 1 || clearance.access_status === "APPROVED") &&
                 exitCompleted &&
                 counselingCompleted &&
                 interviewCompleted;
@@ -1096,6 +1609,7 @@ document.addEventListener(
 
 
                                 const canApprove =
+                                    (record.workflow_version === 1 || record.access_status === "APPROVED") &&
                                     record.exit_questionnaire_completed ===
                                     true &&
                                     record.counseling_requirements_completed ===
@@ -1764,6 +2278,7 @@ document.addEventListener(
                     if (
                         currentRole === "admin" ||
                         currentRole === "head_counselor" ||
+                        currentRole === "counselor" ||
                         currentRole === "staff"
                     ) {
 

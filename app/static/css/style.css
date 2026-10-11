@@ -3571,3 +3571,149 @@ CONFIDENTIAL PROGRESS NOTES
         width: 100%;
     }
 }
+
+/* ============================================
+   FLOATING REGISTRATION NOTIFICATIONS
+   ============================================ */
+
+#registerMessage:not(.hidden) {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+
+    width: min(390px, calc(100vw - 32px));
+    margin: 0;
+    padding: 18px 22px 18px 54px;
+
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+
+    box-shadow: 0 12px 35px rgba(30, 15, 50, 0.18);
+
+    animation: registrationToastIn 0.3s ease-out;
+}
+
+#registerMessage.error {
+    background: #fff1f0;
+    border: 1px solid #f5a9a4;
+    color: #b42318;
+}
+
+#registerMessage.success {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+#registerMessage.error::before {
+    content: "!";
+    position: absolute;
+    left: 17px;
+    top: 17px;
+
+    display: grid;
+    place-items: center;
+
+    width: 25px;
+    height: 25px;
+
+    border-radius: 50%;
+    background: #dc2626;
+    color: white;
+    font-weight: 800;
+}
+
+#registerMessage.success::before {
+    content: "✓";
+    position: absolute;
+    left: 17px;
+    top: 17px;
+
+    display: grid;
+    place-items: center;
+
+    width: 25px;
+    height: 25px;
+
+    border-radius: 50%;
+    background: #16a34a;
+    color: white;
+    font-weight: 800;
+}
+
+@keyframes registrationToastIn {
+    from {
+        opacity: 0;
+        transform: translateX(35px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 600px) {
+    #registerMessage:not(.hidden) {
+        top: 16px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #registerMessage:not(.hidden) {
+        animation: none;
+    }
+}
+/* National University sidebar logo */
+
+.sidebar-brand .brand-logo.small {
+    background: #ffffff;
+    padding: 4px;
+    overflow: hidden;
+}
+
+.sidebar-brand .brand-logo.small .nu-logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.sidebar-brand .brand-logo.small {
+    width: 44px;
+    height: 44px;
+    background: #ffffff;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.sidebar-brand .brand-logo.small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.75);
+}
+/* National University logo — shared across pages */
+
+.brand-logo img.nu-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.3);
+    display: block;
+}
+
+.brand-logo:has(img.nu-logo) {
+    background: white;
+    overflow: hidden;
+    padding: 0;
+}

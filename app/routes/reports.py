@@ -1,5 +1,6 @@
+from pathlib import Path
+from reportlab.platypus import Image
 from io import BytesIO
-
 from flask import Blueprint, send_file
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
@@ -17,26 +18,34 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-
-from ..enums import ClearanceStatus, UserRole
+from ..enums import (
+    ClearanceAccessStatus,
+    ClearanceStatus,
+    ExitReviewStatus,
+    UserRole,
+)
 from ..extensions import db
-from ..models import Appointment, Clearance, CounselingCase
+from ..models import (
+    Appointment,
+    Clearance,
+    CounselingCase,
+    ExitSubmission,
+)
 from ..utils import audit, current_user, error, roles_required
 from .cases import can_access_case
-
-
+NU_LOGO_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "static"
+    / "images"
+    / "nu-logo.png"
+)
 reports_bp = Blueprint("reports", __name__)
-
-
 # =========================================================
 # SHARED / GENERIC PDF
 # Used by Case Summary and Clearance Certificate for now.
 # =========================================================
-
 def make_pdf(title, rows, confidentiality=None):
-
     buffer = BytesIO()
-
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
@@ -45,9 +54,7 @@ def make_pdf(title, rows, confidentiality=None):
         topMargin=18 * mm,
         bottomMargin=18 * mm,
     )
-
     styles = getSampleStyleSheet()
-
     story = [
         Paragraph(
             "UNIVERSITY GUIDANCE & COUNSELING",
@@ -59,9 +66,7 @@ def make_pdf(title, rows, confidentiality=None):
             styles["Title"],
         ),
     ]
-
     if confidentiality:
-
         story += [
             Spacer(1, 3 * mm),
             Paragraph(
@@ -69,11 +74,9 @@ def make_pdf(title, rows, confidentiality=None):
                 styles["Italic"],
             ),
         ]
-
     story += [
         Spacer(1, 8 * mm)
     ]
-
     data = [
         [
             Paragraph(
@@ -87,7 +90,6 @@ def make_pdf(title, rows, confidentiality=None):
         ]
         for label, value in rows
     ]
-
     table = Table(
         data,
         colWidths=[
@@ -95,7 +97,6 @@ def make_pdf(title, rows, confidentiality=None):
             105 * mm,
         ],
     )
-
     table.setStyle(
         TableStyle([
             (
@@ -143,7 +144,6 @@ def make_pdf(title, rows, confidentiality=None):
             ),
         ])
     )
-
     story += [
         table,
         Spacer(1, 18 * mm),
@@ -152,48 +152,31 @@ def make_pdf(title, rows, confidentiality=None):
             styles["Italic"],
         ),
     ]
-
     doc.build(story)
-
     buffer.seek(0)
-
     return buffer
-
-
 # =========================================================
 # DATE / TIME FORMATTERS
 # =========================================================
-
 def format_document_date(value):
-
     if not value:
         return "—"
-
     return value.strftime(
         "%B %d, %Y"
     )
-
-
 def format_document_time(value):
-
     if not value:
         return "—"
-
     # %I gives 12-hour time.
     # lstrip removes the leading zero from values such as 09:00 AM.
     return value.strftime(
         "%I:%M %p"
     ).lstrip("0")
-
-
 # =========================================================
 # FORMAL APPOINTMENT CONFIRMATION PDF
 # =========================================================
-
 def make_appointment_confirmation_pdf(appointment):
-
     buffer = BytesIO()
-
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
@@ -204,27 +187,20 @@ def make_appointment_confirmation_pdf(appointment):
         title="Guidance Appointment Confirmation Slip",
         author="University Guidance & Counseling Office",
     )
-
     # -----------------------------------------------------
     # COLORS
     # -----------------------------------------------------
-
     purple = colors.HexColor("#6F42C1")
     dark_purple = colors.HexColor("#4F2B78")
     light_purple = colors.HexColor("#F4EEFB")
-
     dark_text = colors.HexColor("#2F2935")
     gray_text = colors.HexColor("#6F6875")
     border = colors.HexColor("#DDD6E5")
-
     reminder_background = colors.HexColor("#F8F5FB")
-
     # -----------------------------------------------------
     # STYLES
     # -----------------------------------------------------
-
     styles = getSampleStyleSheet()
-
     office_title_style = ParagraphStyle(
         "AppointmentOfficeTitle",
         parent=styles["Heading2"],
@@ -234,7 +210,6 @@ def make_appointment_confirmation_pdf(appointment):
         textColor=dark_text,
         spaceAfter=2,
     )
-
     office_subtitle_style = ParagraphStyle(
         "AppointmentOfficeSubtitle",
         parent=styles["BodyText"],
@@ -243,7 +218,6 @@ def make_appointment_confirmation_pdf(appointment):
         leading=11,
         textColor=gray_text,
     )
-
     document_title_style = ParagraphStyle(
         "AppointmentDocumentTitle",
         parent=styles["Title"],
@@ -254,7 +228,6 @@ def make_appointment_confirmation_pdf(appointment):
         textColor=dark_purple,
         spaceAfter=0,
     )
-
     section_title_style = ParagraphStyle(
         "AppointmentSectionTitle",
         parent=styles["Heading3"],
@@ -264,7 +237,6 @@ def make_appointment_confirmation_pdf(appointment):
         textColor=dark_purple,
         spaceAfter=0,
     )
-
     label_style = ParagraphStyle(
         "AppointmentLabel",
         parent=styles["BodyText"],
@@ -273,7 +245,6 @@ def make_appointment_confirmation_pdf(appointment):
         leading=12,
         textColor=gray_text,
     )
-
     value_style = ParagraphStyle(
         "AppointmentValue",
         parent=styles["BodyText"],
@@ -282,14 +253,12 @@ def make_appointment_confirmation_pdf(appointment):
         leading=13,
         textColor=dark_text,
     )
-
     status_style = ParagraphStyle(
         "AppointmentStatus",
         parent=value_style,
         fontName="Helvetica-Bold",
         textColor=dark_purple,
     )
-
     reminder_title_style = ParagraphStyle(
         "AppointmentReminderTitle",
         parent=styles["BodyText"],
@@ -299,7 +268,6 @@ def make_appointment_confirmation_pdf(appointment):
         textColor=dark_purple,
         spaceAfter=4,
     )
-
     reminder_text_style = ParagraphStyle(
         "AppointmentReminderText",
         parent=styles["BodyText"],
@@ -308,7 +276,6 @@ def make_appointment_confirmation_pdf(appointment):
         leading=12,
         textColor=dark_text,
     )
-
     signature_label_style = ParagraphStyle(
         "AppointmentSignature",
         parent=styles["BodyText"],
@@ -318,7 +285,6 @@ def make_appointment_confirmation_pdf(appointment):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     footer_style = ParagraphStyle(
         "AppointmentFooter",
         parent=styles["BodyText"],
@@ -328,67 +294,11 @@ def make_appointment_confirmation_pdf(appointment):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     # -----------------------------------------------------
     # HEADER
     # Plain "GC" logo — no leaf/icon graphic.
     # -----------------------------------------------------
-
-    gc_logo = Table(
-        [
-            [
-                Paragraph(
-                    "<b>GC</b>",
-                    ParagraphStyle(
-                        "GCLogoText",
-                        parent=styles["BodyText"],
-                        fontName="Helvetica-Bold",
-                        fontSize=19,
-                        leading=22,
-                        alignment=TA_CENTER,
-                        textColor=colors.white,
-                    ),
-                )
-            ]
-        ],
-        colWidths=[
-            19 * mm
-        ],
-        rowHeights=[
-            19 * mm
-        ],
-    )
-
-    gc_logo.setStyle(
-        TableStyle([
-            (
-                "BACKGROUND",
-                (0, 0),
-                (-1, -1),
-                purple,
-            ),
-            (
-                "VALIGN",
-                (0, 0),
-                (-1, -1),
-                "MIDDLE",
-            ),
-            (
-                "ALIGN",
-                (0, 0),
-                (-1, -1),
-                "CENTER",
-            ),
-            (
-                "BOX",
-                (0, 0),
-                (-1, -1),
-                0.8,
-                purple,
-            ),
-        ])
-    )
-
+    gc_logo = Image(str(NU_LOGO_PATH), width=19 * mm, height=19 * mm)
     office_text = [
         Paragraph(
             "UNIVERSITY GUIDANCE &amp; COUNSELING OFFICE",
@@ -399,7 +309,6 @@ def make_appointment_confirmation_pdf(appointment):
             office_subtitle_style,
         ),
     ]
-
     header = Table(
         [
             [
@@ -412,7 +321,6 @@ def make_appointment_confirmation_pdf(appointment):
             140 * mm,
         ],
     )
-
     header.setStyle(
         TableStyle([
             (
@@ -447,11 +355,9 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # HEADER DIVIDER
     # -----------------------------------------------------
-
     divider = Table(
         [[""]],
         colWidths=[
@@ -461,7 +367,6 @@ def make_appointment_confirmation_pdf(appointment):
             1.2 * mm
         ],
     )
-
     divider.setStyle(
         TableStyle([
             (
@@ -479,25 +384,20 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # STUDENT INFORMATION
     # -----------------------------------------------------
-
     student_name = (
         appointment.student.to_dict()["full_name"]
     )
-
     student_number = (
         appointment.student.student_number
     )
-
     date_requested = (
         format_document_date(
             appointment.created_at
         )
     )
-
     student_section_title = Table(
         [
             [
@@ -511,7 +411,6 @@ def make_appointment_confirmation_pdf(appointment):
             166 * mm
         ],
     )
-
     student_section_title.setStyle(
         TableStyle([
             (
@@ -553,7 +452,6 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     student_data = [
         [
             Paragraph(
@@ -586,7 +484,6 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ],
     ]
-
     student_table = Table(
         student_data,
         colWidths=[
@@ -594,7 +491,6 @@ def make_appointment_confirmation_pdf(appointment):
             123 * mm,
         ],
     )
-
     student_table.setStyle(
         TableStyle([
             (
@@ -643,43 +539,35 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # APPOINTMENT DETAILS
     # -----------------------------------------------------
-
     appointment_date = (
         format_document_date(
             appointment.starts_at
         )
     )
-
     appointment_time = (
         f"{format_document_time(appointment.starts_at)}"
         f" - "
         f"{format_document_time(appointment.ends_at)}"
     )
-
     counselor_name = (
         appointment.counselor.to_dict()["full_name"]
     )
-
     room_name = (
         appointment.room.name
         if appointment.room
         else "To be assigned"
     )
-
     purpose = (
         appointment.purpose or "—"
     )
-
     status = (
         appointment.status.value
         if appointment.status
         else "—"
     )
-
     appointment_section_title = Table(
         [
             [
@@ -693,7 +581,6 @@ def make_appointment_confirmation_pdf(appointment):
             166 * mm
         ],
     )
-
     appointment_section_title.setStyle(
         TableStyle([
             (
@@ -735,7 +622,6 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     appointment_data = [
         [
             Paragraph(
@@ -801,7 +687,6 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ],
     ]
-
     appointment_table = Table(
         appointment_data,
         colWidths=[
@@ -809,7 +694,6 @@ def make_appointment_confirmation_pdf(appointment):
             123 * mm,
         ],
     )
-
     appointment_table.setStyle(
         TableStyle([
             (
@@ -858,11 +742,9 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # IMPORTANT REMINDER
     # -----------------------------------------------------
-
     reminder = Table(
         [
             [
@@ -885,7 +767,6 @@ def make_appointment_confirmation_pdf(appointment):
             166 * mm
         ],
     )
-
     reminder.setStyle(
         TableStyle([
             (
@@ -927,15 +808,12 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # SIGNATURE AREA
     # -----------------------------------------------------
-
     signature_line = (
         "____________________________"
     )
-
     signatures = Table(
         [
             [
@@ -964,7 +842,6 @@ def make_appointment_confirmation_pdf(appointment):
             83 * mm,
         ],
     )
-
     signatures.setStyle(
         TableStyle([
             (
@@ -1005,102 +882,77 @@ def make_appointment_confirmation_pdf(appointment):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # FOOTER
     # -----------------------------------------------------
-
     footer = Paragraph(
         "This is a system-generated document from the "
         "University Guidance &amp; Counseling Management System.",
         footer_style,
     )
-
     # -----------------------------------------------------
     # BUILD DOCUMENT
     # -----------------------------------------------------
-
     story = [
         header,
-
         Spacer(
             1,
             5 * mm,
         ),
-
         divider,
-
         Spacer(
             1,
             8 * mm,
         ),
-
         Paragraph(
             "GUIDANCE APPOINTMENT CONFIRMATION SLIP",
             document_title_style,
         ),
-
         Spacer(
             1,
             9 * mm,
         ),
-
         KeepTogether([
             student_section_title,
             student_table,
         ]),
-
         Spacer(
             1,
             7 * mm,
         ),
-
         KeepTogether([
             appointment_section_title,
             appointment_table,
         ]),
-
         Spacer(
             1,
             8 * mm,
         ),
-
         reminder,
-
         Spacer(
             1,
             18 * mm,
         ),
-
         signatures,
-
         Spacer(
             1,
             13 * mm,
         ),
-
         divider,
-
         Spacer(
             1,
             4 * mm,
         ),
-
         footer,
     ]
-
     doc.build(
         story
     )
-
     buffer.seek(0)
-
     return buffer
-
 # =========================================================
 # APPOINTMENT CONFIRMATION SLIP
 # =========================================================
-
 @reports_bp.get(
     "/reports/appointments/<int:appointment_id>/confirmation.pdf"
 )
@@ -1112,22 +964,17 @@ def make_appointment_confirmation_pdf(appointment):
     UserRole.STAFF,
 )
 def appointment_confirmation(appointment_id):
-
     appointment = db.session.get(
         Appointment,
         appointment_id,
     )
-
     user = current_user()
-
     if not appointment:
-
         return error(
             "Appointment not found.",
             404,
             "not_found",
         )
-
     participant = (
         user.role in {
             UserRole.HEAD_COUNSELOR,
@@ -1135,40 +982,32 @@ def appointment_confirmation(appointment_id):
             UserRole.STAFF,
         }
     )
-
     participant |= (
         user.role == UserRole.STUDENT
         and appointment.student_id
         == user.student_profile.id
     )
-
     participant |= (
         user.role == UserRole.COUNSELOR
         and appointment.counselor_id
         == user.counselor_profile.id
     )
-
     if not participant:
-
         return error(
             "You do not have access to this appointment.",
             403,
             "forbidden",
         )
-
     audit(
         "APPOINTMENT_SLIP_GENERATED",
         "appointment",
         appointment.id,
         user.id,
     )
-
     db.session.commit()
-
     pdf = make_appointment_confirmation_pdf(
         appointment
     )
-
     return send_file(
         pdf,
         mimetype="application/pdf",
@@ -1177,11 +1016,8 @@ def appointment_confirmation(appointment_id):
             "guidance-appointment-confirmation.pdf"
         ),
     )
-
 def make_case_summary_pdf(case):
-
     buffer = BytesIO()
-
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
@@ -1192,26 +1028,20 @@ def make_case_summary_pdf(case):
         title="Confidential Case Summary Slip",
         author="University Guidance & Counseling Office",
     )
-
     # -----------------------------------------------------
     # COLORS
     # -----------------------------------------------------
-
     purple = colors.HexColor("#6F42C1")
     dark_purple = colors.HexColor("#4F2B78")
     light_purple = colors.HexColor("#F4EEFB")
-
     dark_text = colors.HexColor("#2F2935")
     gray_text = colors.HexColor("#6F6875")
     border = colors.HexColor("#DDD6E5")
     notice_background = colors.HexColor("#F8F5FB")
-
     # -----------------------------------------------------
     # STYLES
     # -----------------------------------------------------
-
     styles = getSampleStyleSheet()
-
     office_title_style = ParagraphStyle(
         "CaseOfficeTitle",
         parent=styles["Heading2"],
@@ -1221,7 +1051,6 @@ def make_case_summary_pdf(case):
         textColor=dark_text,
         spaceAfter=2,
     )
-
     office_subtitle_style = ParagraphStyle(
         "CaseOfficeSubtitle",
         parent=styles["BodyText"],
@@ -1230,7 +1059,6 @@ def make_case_summary_pdf(case):
         leading=11,
         textColor=gray_text,
     )
-
     document_title_style = ParagraphStyle(
         "CaseDocumentTitle",
         parent=styles["Title"],
@@ -1241,7 +1069,6 @@ def make_case_summary_pdf(case):
         textColor=dark_purple,
         spaceAfter=0,
     )
-
     document_subtitle_style = ParagraphStyle(
         "CaseDocumentSubtitle",
         parent=styles["BodyText"],
@@ -1251,7 +1078,6 @@ def make_case_summary_pdf(case):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     section_title_style = ParagraphStyle(
         "CaseSectionTitle",
         parent=styles["Heading3"],
@@ -1261,7 +1087,6 @@ def make_case_summary_pdf(case):
         textColor=dark_purple,
         spaceAfter=0,
     )
-
     label_style = ParagraphStyle(
         "CaseLabel",
         parent=styles["BodyText"],
@@ -1270,7 +1095,6 @@ def make_case_summary_pdf(case):
         leading=12,
         textColor=gray_text,
     )
-
     value_style = ParagraphStyle(
         "CaseValue",
         parent=styles["BodyText"],
@@ -1279,14 +1103,12 @@ def make_case_summary_pdf(case):
         leading=13,
         textColor=dark_text,
     )
-
     emphasized_value_style = ParagraphStyle(
         "CaseEmphasizedValue",
         parent=value_style,
         fontName="Helvetica-Bold",
         textColor=dark_purple,
     )
-
     notice_title_style = ParagraphStyle(
         "CaseNoticeTitle",
         parent=styles["BodyText"],
@@ -1296,7 +1118,6 @@ def make_case_summary_pdf(case):
         textColor=dark_purple,
         spaceAfter=4,
     )
-
     notice_text_style = ParagraphStyle(
         "CaseNoticeText",
         parent=styles["BodyText"],
@@ -1306,7 +1127,6 @@ def make_case_summary_pdf(case):
         textColor=dark_text,
         alignment=TA_JUSTIFY,
     )
-
     signature_style = ParagraphStyle(
         "CaseSignature",
         parent=styles["BodyText"],
@@ -1316,7 +1136,6 @@ def make_case_summary_pdf(case):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     footer_style = ParagraphStyle(
         "CaseFooter",
         parent=styles["BodyText"],
@@ -1326,60 +1145,10 @@ def make_case_summary_pdf(case):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     # -----------------------------------------------------
     # HEADER
     # -----------------------------------------------------
-
-    gc_logo = Table(
-        [[
-            Paragraph(
-                "<b>GC</b>",
-                ParagraphStyle(
-                    "CaseGCLogo",
-                    parent=styles["BodyText"],
-                    fontName="Helvetica-Bold",
-                    fontSize=19,
-                    leading=22,
-                    alignment=TA_CENTER,
-                    textColor=colors.white,
-                ),
-            )
-        ]],
-        colWidths=[19 * mm],
-        rowHeights=[19 * mm],
-    )
-
-    gc_logo.setStyle(
-        TableStyle([
-            (
-                "BACKGROUND",
-                (0, 0),
-                (-1, -1),
-                purple,
-            ),
-            (
-                "VALIGN",
-                (0, 0),
-                (-1, -1),
-                "MIDDLE",
-            ),
-            (
-                "ALIGN",
-                (0, 0),
-                (-1, -1),
-                "CENTER",
-            ),
-            (
-                "BOX",
-                (0, 0),
-                (-1, -1),
-                0.8,
-                purple,
-            ),
-        ])
-    )
-
+    gc_logo = Image(str(NU_LOGO_PATH), width=19 * mm, height=19 * mm)
     office_text = [
         Paragraph(
             "UNIVERSITY GUIDANCE &amp; COUNSELING OFFICE",
@@ -1390,7 +1159,6 @@ def make_case_summary_pdf(case):
             office_subtitle_style,
         ),
     ]
-
     header = Table(
         [[gc_logo, office_text]],
         colWidths=[
@@ -1398,7 +1166,6 @@ def make_case_summary_pdf(case):
             140 * mm,
         ],
     )
-
     header.setStyle(
         TableStyle([
             (
@@ -1433,13 +1200,11 @@ def make_case_summary_pdf(case):
             ),
         ])
     )
-
     divider = Table(
         [[""]],
         colWidths=[166 * mm],
         rowHeights=[1.2 * mm],
     )
-
     divider.setStyle(
         TableStyle([
             (
@@ -1450,43 +1215,35 @@ def make_case_summary_pdf(case):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # CASE INFORMATION
     # -----------------------------------------------------
-
     pseudonym = f"STUDENT-{case.student_id:05d}"
-
     opened_date = (
         format_document_date(case.opened_at)
         if case.opened_at
         else "—"
     )
-
     closed_date = (
         format_document_date(case.closed_at)
         if case.closed_at
         else "Open"
     )
-
     counselor_name = (
         case.counselor.to_dict()["full_name"]
         if case.counselor
         else "—"
     )
-
     priority = (
         case.priority.value
         if case.priority
         else "—"
     )
-
     status = (
         case.status.value
         if case.status
         else "—"
     )
-
     case_section_title = Table(
         [[
             Paragraph(
@@ -1496,7 +1253,6 @@ def make_case_summary_pdf(case):
         ]],
         colWidths=[166 * mm],
     )
-
     case_section_title.setStyle(
         TableStyle([
             (
@@ -1538,7 +1294,6 @@ def make_case_summary_pdf(case):
             ),
         ])
     )
-
     case_data = [
         [
             Paragraph("Case Number", label_style),
@@ -1597,7 +1352,6 @@ def make_case_summary_pdf(case):
             ),
         ],
     ]
-
     case_table = Table(
         case_data,
         colWidths=[
@@ -1605,7 +1359,6 @@ def make_case_summary_pdf(case):
             123 * mm,
         ],
     )
-
     case_table.setStyle(
         TableStyle([
             (
@@ -1654,11 +1407,9 @@ def make_case_summary_pdf(case):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # CONFIDENTIALITY NOTICE
     # -----------------------------------------------------
-
     confidentiality_notice = Table(
         [
             [
@@ -1680,7 +1431,6 @@ def make_case_summary_pdf(case):
         ],
         colWidths=[166 * mm],
     )
-
     confidentiality_notice.setStyle(
         TableStyle([
             (
@@ -1722,11 +1472,9 @@ def make_case_summary_pdf(case):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # SIGNATURE
     # -----------------------------------------------------
-
     signatures = Table(
         [
             [
@@ -1749,130 +1497,92 @@ def make_case_summary_pdf(case):
             83 * mm,
         ],
     )
-
     # -----------------------------------------------------
     # FOOTER
     # -----------------------------------------------------
-
     footer = Paragraph(
         "CONFIDENTIAL — System-generated document from the "
         "University Guidance &amp; Counseling Management System.",
         footer_style,
     )
-
     # -----------------------------------------------------
     # BUILD - ONE PAGE
     # -----------------------------------------------------
-
     story = [
         header,
-
         Spacer(1, 3 * mm),
-
         divider,
-
         Spacer(1, 5 * mm),
-
         Paragraph(
             "CONFIDENTIAL CASE SUMMARY SLIP",
             document_title_style,
         ),
-
         Spacer(1, 1.5 * mm),
-
         Paragraph(
             "Pseudonymized Case Record",
             document_subtitle_style,
         ),
-
         Spacer(1, 5 * mm),
-
         KeepTogether([
             case_section_title,
             case_table,
         ]),
-
         Spacer(1, 5 * mm),
-
         confidentiality_notice,
-
         Spacer(1, 9 * mm),
-
         signatures,
-
         Spacer(1, 6 * mm),
-
         divider,
-
         Spacer(1, 2.5 * mm),
-
         footer,
     ]
-
     doc.build(story)
-
     buffer.seek(0)
-
     return buffer
-
 # =========================================================
 # CONFIDENTIAL CASE SUMMARY
 # =========================================================
-
 @reports_bp.get(
     "/reports/cases/<int:case_id>/summary.pdf"
 )
 @roles_required(
-    UserRole.STUDENT,
     UserRole.COUNSELOR,
-    UserRole.HEAD_COUNSELOR,
-    UserRole.ADMIN
+    UserRole.HEAD_COUNSELOR
 )
 def case_summary(case_id):
-
     case = db.session.get(
         CounselingCase,
-        case_id,
+        case_id,    
     )
-
     user = current_user()
-
     if not case:
-
         return error(
             "Case not found.",
             404,
             "not_found",
         )
-
     if not can_access_case(
         user,
         case,
     ):
-
         return error(
             "You do not have access to this case.",
             403,
             "forbidden",
         )
-
     pseudonym = (
         f"STUDENT-{case.student_id:05d}"
     )
-
     audit(
         "CASE_SUMMARY_GENERATED",
         "case",
         case.id,
         user.id,
     )
-
     db.session.commit()
-
     pdf = make_case_summary_pdf(
         case
     )
-
     return send_file(
         pdf,
         mimetype="application/pdf",
@@ -1881,11 +1591,8 @@ def case_summary(case_id):
             f"case-summary-{case.case_number}.pdf"
         ),
     )
-
 def make_clearance_certificate_pdf(clearance):
-
     buffer = BytesIO()
-
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
@@ -1896,26 +1603,20 @@ def make_clearance_certificate_pdf(clearance):
         title="Student Exit Clearance Certificate",
         author="University Guidance & Counseling Office",
     )
-
     # -----------------------------------------------------
     # COLORS
     # -----------------------------------------------------
-
     purple = colors.HexColor("#6F42C1")
     dark_purple = colors.HexColor("#4F2B78")
     light_purple = colors.HexColor("#F4EEFB")
-
     dark_text = colors.HexColor("#2F2935")
     gray_text = colors.HexColor("#6F6875")
     border = colors.HexColor("#DDD6E5")
     notice_background = colors.HexColor("#F8F5FB")
-
     # -----------------------------------------------------
     # STYLES
     # -----------------------------------------------------
-
     styles = getSampleStyleSheet()
-
     office_title_style = ParagraphStyle(
         "ClearanceOfficeTitle",
         parent=styles["Heading2"],
@@ -1925,7 +1626,6 @@ def make_clearance_certificate_pdf(clearance):
         textColor=dark_text,
         spaceAfter=2,
     )
-
     office_subtitle_style = ParagraphStyle(
         "ClearanceOfficeSubtitle",
         parent=styles["BodyText"],
@@ -1934,7 +1634,6 @@ def make_clearance_certificate_pdf(clearance):
         leading=11,
         textColor=gray_text,
     )
-
     document_title_style = ParagraphStyle(
         "ClearanceDocumentTitle",
         parent=styles["Title"],
@@ -1945,7 +1644,6 @@ def make_clearance_certificate_pdf(clearance):
         textColor=dark_purple,
         spaceAfter=0,
     )
-
     certificate_number_style = ParagraphStyle(
         "ClearanceCertificateNumber",
         parent=styles["BodyText"],
@@ -1955,7 +1653,6 @@ def make_clearance_certificate_pdf(clearance):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     section_title_style = ParagraphStyle(
         "ClearanceSectionTitle",
         parent=styles["Heading3"],
@@ -1965,7 +1662,6 @@ def make_clearance_certificate_pdf(clearance):
         textColor=dark_purple,
         spaceAfter=0,
     )
-
     label_style = ParagraphStyle(
         "ClearanceLabel",
         parent=styles["BodyText"],
@@ -1974,7 +1670,6 @@ def make_clearance_certificate_pdf(clearance):
         leading=12,
         textColor=gray_text,
     )
-
     value_style = ParagraphStyle(
         "ClearanceValue",
         parent=styles["BodyText"],
@@ -1983,14 +1678,12 @@ def make_clearance_certificate_pdf(clearance):
         leading=13,
         textColor=dark_text,
     )
-
     status_style = ParagraphStyle(
         "ClearanceStatus",
         parent=value_style,
         fontName="Helvetica-Bold",
         textColor=dark_purple,
     )
-
     notice_title_style = ParagraphStyle(
         "ClearanceNoticeTitle",
         parent=styles["BodyText"],
@@ -2000,7 +1693,6 @@ def make_clearance_certificate_pdf(clearance):
         textColor=dark_purple,
         spaceAfter=4,
     )
-
     notice_text_style = ParagraphStyle(
         "ClearanceNoticeText",
         parent=styles["BodyText"],
@@ -2010,7 +1702,6 @@ def make_clearance_certificate_pdf(clearance):
         textColor=dark_text,
         alignment=TA_JUSTIFY,
     )
-
     signature_style = ParagraphStyle(
         "ClearanceSignature",
         parent=styles["BodyText"],
@@ -2020,7 +1711,6 @@ def make_clearance_certificate_pdf(clearance):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     footer_style = ParagraphStyle(
         "ClearanceFooter",
         parent=styles["BodyText"],
@@ -2030,60 +1720,10 @@ def make_clearance_certificate_pdf(clearance):
         alignment=TA_CENTER,
         textColor=gray_text,
     )
-
     # -----------------------------------------------------
     # HEADER
     # -----------------------------------------------------
-
-    gc_logo = Table(
-        [[
-            Paragraph(
-                "<b>GC</b>",
-                ParagraphStyle(
-                    "ClearanceGCLogo",
-                    parent=styles["BodyText"],
-                    fontName="Helvetica-Bold",
-                    fontSize=19,
-                    leading=22,
-                    alignment=TA_CENTER,
-                    textColor=colors.white,
-                ),
-            )
-        ]],
-        colWidths=[19 * mm],
-        rowHeights=[19 * mm],
-    )
-
-    gc_logo.setStyle(
-        TableStyle([
-            (
-                "BACKGROUND",
-                (0, 0),
-                (-1, -1),
-                purple,
-            ),
-            (
-                "VALIGN",
-                (0, 0),
-                (-1, -1),
-                "MIDDLE",
-            ),
-            (
-                "ALIGN",
-                (0, 0),
-                (-1, -1),
-                "CENTER",
-            ),
-            (
-                "BOX",
-                (0, 0),
-                (-1, -1),
-                0.8,
-                purple,
-            ),
-        ])
-    )
-
+    gc_logo = Image(str(NU_LOGO_PATH), width=19 * mm, height=19 * mm)
     office_text = [
         Paragraph(
             "UNIVERSITY GUIDANCE &amp; COUNSELING OFFICE",
@@ -2094,7 +1734,6 @@ def make_clearance_certificate_pdf(clearance):
             office_subtitle_style,
         ),
     ]
-
     header = Table(
         [[gc_logo, office_text]],
         colWidths=[
@@ -2102,7 +1741,6 @@ def make_clearance_certificate_pdf(clearance):
             140 * mm,
         ],
     )
-
     header.setStyle(
         TableStyle([
             (
@@ -2137,13 +1775,11 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ])
     )
-
     divider = Table(
         [[""]],
         colWidths=[166 * mm],
         rowHeights=[1.2 * mm],
     )
-
     divider.setStyle(
         TableStyle([
             (
@@ -2154,15 +1790,11 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # STUDENT INFORMATION
     # -----------------------------------------------------
-
     student = clearance.student
-
     student_name = student.to_dict()["full_name"]
-
     student_section_title = Table(
         [[
             Paragraph(
@@ -2172,7 +1804,6 @@ def make_clearance_certificate_pdf(clearance):
         ]],
         colWidths=[166 * mm],
     )
-
     student_section_title.setStyle(
         TableStyle([
             (
@@ -2214,7 +1845,6 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ])
     )
-
     student_data = [
         [
             Paragraph("Student Name", label_style),
@@ -2242,7 +1872,6 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ],
     ]
-
     student_table = Table(
         student_data,
         colWidths=[
@@ -2250,7 +1879,6 @@ def make_clearance_certificate_pdf(clearance):
             123 * mm,
         ],
     )
-
     student_table.setStyle(
         TableStyle([
             (
@@ -2299,23 +1927,19 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # CLEARANCE DETAILS
     # -----------------------------------------------------
-
     approved_date = (
         format_document_date(clearance.approved_at)
         if clearance.approved_at
         else "—"
     )
-
     status = (
         clearance.status.value
         if clearance.status
         else "—"
     )
-
     clearance_section_title = Table(
         [[
             Paragraph(
@@ -2325,7 +1949,6 @@ def make_clearance_certificate_pdf(clearance):
         ]],
         colWidths=[166 * mm],
     )
-
     clearance_section_title.setStyle(
         TableStyle([
             (
@@ -2367,7 +1990,6 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ])
     )
-
     clearance_data = [
         [
             Paragraph("Academic Year", label_style),
@@ -2433,7 +2055,6 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ],
     ]
-
     clearance_table = Table(
         clearance_data,
         colWidths=[
@@ -2441,7 +2062,6 @@ def make_clearance_certificate_pdf(clearance):
             123 * mm,
         ],
     )
-
     clearance_table.setStyle(
         TableStyle([
             (
@@ -2490,11 +2110,9 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # CERTIFICATION
     # -----------------------------------------------------
-
     certification = Table(
         [
             [
@@ -2517,7 +2135,6 @@ def make_clearance_certificate_pdf(clearance):
         ],
         colWidths=[166 * mm],
     )
-
     certification.setStyle(
         TableStyle([
             (
@@ -2559,11 +2176,9 @@ def make_clearance_certificate_pdf(clearance):
             ),
         ])
     )
-
     # -----------------------------------------------------
     # SIGNATURE
     # -----------------------------------------------------
-
     signatures = Table(
         [
             [
@@ -2586,37 +2201,27 @@ def make_clearance_certificate_pdf(clearance):
             83 * mm,
         ],
     )
-
     # -----------------------------------------------------
     # FOOTER
     # -----------------------------------------------------
-
     footer = Paragraph(
         "This is a system-generated document from the "
         "University Guidance &amp; Counseling Management System.",
         footer_style,
     )
-
     # -----------------------------------------------------
     # BUILD
     # -----------------------------------------------------
-
     story = [
         header,
-
         Spacer(1, 3 * mm),
-
         divider,
-
         Spacer(1, 4 * mm),
-
         Paragraph(
             "STUDENT EXIT CLEARANCE CERTIFICATE",
             document_title_style,
         ),
-
         Spacer(1, 1 * mm),
-
         Paragraph(
             (
                 "Certificate No. "
@@ -2624,48 +2229,31 @@ def make_clearance_certificate_pdf(clearance):
             ),
             certificate_number_style,
         ),
-
         Spacer(1, 4 * mm),
-
         KeepTogether([
             student_section_title,
             student_table,
         ]),
-
         Spacer(1, 4 * mm),
-
         KeepTogether([
             clearance_section_title,
             clearance_table,
         ]),
-
         Spacer(1, 4 * mm),
-
         certification,
-
         Spacer(1, 7 * mm),
-
         signatures,
-
         Spacer(1, 5 * mm),
-
         divider,
-
         Spacer(1, 2 * mm),
-
         footer,
     ]
-
     doc.build(story)
-
     buffer.seek(0)
-
     return buffer
-
 # =========================================================
 # STUDENT EXIT CLEARANCE CERTIFICATE
 # =========================================================
-
 @reports_bp.get(
     "/reports/clearances/<int:clearance_id>/certificate.pdf"
 )
@@ -2676,58 +2264,82 @@ def make_clearance_certificate_pdf(clearance):
     UserRole.STAFF,
 )
 def clearance_certificate(clearance_id):
-
     clearance = db.session.get(
         Clearance,
         clearance_id,
     )
-
     user = current_user()
-
     if not clearance:
-
         return error(
             "Clearance record not found.",
             404,
             "not_found",
         )
-
     if (
         user.role == UserRole.STUDENT
         and clearance.student_id
         != user.student_profile.id
     ):
-
         return error(
             "You do not have access to this clearance.",
             403,
             "forbidden",
         )
-
     if (
         clearance.status
         != ClearanceStatus.CLEARED
     ):
-
         return error(
             "Certificate is unavailable until the student is cleared.",
             409,
             "not_cleared",
         )
-
+    # Protect certificates under the new clearance workflow.
+    # Previously finalized clearances without new-workflow
+    # access decisions remain valid historical records.
+    # Historical certificates remain valid.
+    # Version 2 clearances must satisfy the new approval workflow.
+    is_new_workflow = clearance.workflow_version == 2
+    if is_new_workflow:
+        if not (
+            clearance.exit_interview_completed
+            and clearance.counseling_requirements_completed
+            and clearance.approved_by_user_id is not None
+            and clearance.approved_at is not None
+            and clearance.certificate_number
+        ):
+            return error("Clearance requirements are incomplete.", 409, "requirements_incomplete")
+        if clearance.access_status != ClearanceAccessStatus.APPROVED:
+            return error(
+                "Clearance access has not been approved.",
+                409,
+                "clearance_access_not_approved",
+            )
+        approved_submission = db.session.scalar(
+            db.select(ExitSubmission).where(
+                ExitSubmission.clearance_id == clearance.id,
+                ExitSubmission.student_id == clearance.student_id,
+                ExitSubmission.completed.is_(True),
+                ExitSubmission.review_status == ExitReviewStatus.APPROVED,
+            ).limit(1)
+        )
+        if not approved_submission:
+            return error(
+                "An approved Exit Questionnaire is required "
+                "before generating the certificate.",
+                409,
+                "questionnaire_review_required",
+            )
     audit(
         "CLEARANCE_CERTIFICATE_GENERATED",
         "clearance",
         clearance.id,
         user.id,
     )
-
     db.session.commit()
-
     pdf = make_clearance_certificate_pdf(
         clearance
     )
-
     return send_file(
         pdf,
         mimetype="application/pdf",

@@ -25,6 +25,11 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "development-only-secret-key-change-before-production")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "development-only-jwt-key-change-before-production")
     NOTES_ENCRYPTION_KEY = os.getenv("NOTES_ENCRYPTION_KEY", "")
+    CLOSURE_ENCRYPTION_KEY = os.getenv("CLOSURE_ENCRYPTION_KEY", "")
+    NEW_NOTES_ENCRYPTION_KEY = os.getenv("NEW_NOTES_ENCRYPTION_KEY", "")
+    STUDENT_SUMMARY_ENCRYPTION_KEY = os.getenv("STUDENT_SUMMARY_ENCRYPTION_KEY", "")
+    REFERRAL_HASH_KEY = os.getenv("REFERRAL_HASH_KEY", "")
+    REFERRAL_ENCRYPTION_KEY = os.getenv("REFERRAL_ENCRYPTION_KEY", "")
     SQLALCHEMY_DATABASE_URI = _database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}

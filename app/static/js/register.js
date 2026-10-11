@@ -1,270 +1,132 @@
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
 
-        const form =
-            document.getElementById(
-                "registerForm"
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("registerForm");
+    const messageBox = document.getElementById("registerMessage");
+    const submitButton = document.getElementById("registerSubmitButton");
+    const passwordInput = document.getElementById("password");
+    const togglePasswordButton = document.getElementById("togglePassword");
+    const backToLoginButton = document.getElementById("backToLoginButton");
+
+    // ============================================
+    // SHOW / HIDE PASSWORD
+    // ============================================
+
+    togglePasswordButton.addEventListener("click", () => {
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            togglePasswordButton.textContent = "Hide";
+        } else {
+            passwordInput.type = "password";
+            togglePasswordButton.textContent = "Show";
+        }
+    });
+
+    // ============================================
+    // REGISTER - SEND EMAIL OTP
+    // ============================================
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        hideMessage();
+
+        const payload = {
+            first_name: document.getElementById("firstName").value.trim(),
+            last_name: document.getElementById("lastName").value.trim(),
+            student_number: document.getElementById("studentNumber").value.trim(),
+            program: document.getElementById("program").value.trim(),
+            year_level: Number(document.getElementById("yearLevel").value),
+            contact_number: document.getElementById("contactNumber").value.trim(),
+            email: document.getElementById("email").value.trim().toLowerCase(),
+            password: passwordInput.value
+        };
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Sending Verification Code...";
+
+        try {
+            const data = await apiRequest("/auth/register", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            // Store only the email, never the password or OTP.
+            sessionStorage.setItem(
+                "pendingRegistrationEmail",
+                data.email || payload.email
             );
 
-        const messageBox =
-            document.getElementById(
-                "registerMessage"
+            showMessage(
+                "Verification code sent! Redirecting to email verification...",
+                "success"
             );
 
-        const submitButton =
-            document.getElementById(
-                "registerSubmitButton"
-            );
+            // Clear the password from the form after submission.
+            passwordInput.value = "";
 
-        const passwordInput =
-            document.getElementById(
-                "password"
-            );
+            window.setTimeout(() => {
+                window.location.href = "/verify-otp";
+            }, 700);
 
+        } catch (error) {
+            console.error("Registration request failed.");
 
-        // =================================================
-        // SHOW / HIDE PASSWORD
-        // =================================================
+            const message =
+                error?.data?.message ||
+                error?.data?.error ||
+                "Unable to send verification code. Please try again.";
 
-        document
-            .getElementById(
-                "togglePassword"
-            )
-            .addEventListener(
-                "click",
-                () => {
+            showMessage(message, "error");
 
-                    if (
-                        passwordInput.type ===
-                        "password"
-                    ) {
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "Send Verification Code";
+        }
+    });
 
-                        passwordInput.type =
-                            "text";
+    // ============================================
+    // BACK TO LOGIN
+    // ============================================
 
-                        document
-                            .getElementById(
-                                "togglePassword"
-                            )
-                            .textContent =
-                            "Hide";
+    backToLoginButton.addEventListener("click", () => {
+        window.location.href = "/";
+    });
 
-                    } else {
+    // ============================================
+    // MESSAGE HELPERS
+    // ============================================
 
-                        passwordInput.type =
-                            "password";
+    let messageTimeout;
 
-                        document
-                            .getElementById(
-                                "togglePassword"
-                            )
-                            .textContent =
-                            "Show";
-                    }
+    function showMessage(message, type) {
+        clearTimeout(messageTimeout);
 
-                }
-            );
+        messageBox.textContent = message;
+        messageBox.className = `message ${type}`;
 
+        if (type === "error") {
+            const scrollContainer = form.closest(".auth-card");
 
-        // =================================================
-        // REGISTER
-        // =================================================
-
-        form.addEventListener(
-            "submit",
-            async (event) => {
-
-                event.preventDefault();
-
-                hideMessage();
-
-
-                const payload = {
-
-                    first_name:
-                        document
-                            .getElementById(
-                                "firstName"
-                            )
-                            .value
-                            .trim(),
-
-                    last_name:
-                        document
-                            .getElementById(
-                                "lastName"
-                            )
-                            .value
-                            .trim(),
-
-                    student_number:
-                        document
-                            .getElementById(
-                                "studentNumber"
-                            )
-                            .value
-                            .trim(),
-
-                    program:
-                        document
-                            .getElementById(
-                                "program"
-                            )
-                            .value
-                            .trim(),
-
-                    year_level:
-                        Number(
-                            document
-                                .getElementById(
-                                    "yearLevel"
-                                )
-                                .value
-                        ),
-
-                    contact_number:
-                        document
-                            .getElementById(
-                                "contactNumber"
-                            )
-                            .value
-                            .trim(),
-
-                    email:
-                        document
-                            .getElementById(
-                                "email"
-                            )
-                            .value
-                            .trim(),
-
-                    password:
-                        passwordInput.value
-
-                };
-
-
-                submitButton.disabled =
-                    true;
-
-                submitButton.textContent =
-                    "Creating Account...";
-
-
-                try {
-
-                    const data =
-                        await apiRequest(
-                            "/auth/register",
-                            {
-                                method: "POST",
-
-                                body:
-                                    JSON.stringify(
-                                        payload
-                                    )
-                            }
-                        );
-
-
-                    saveSession(data);
-
-
-                    showMessage(
-                        "Account created successfully. Redirecting...",
-                        "success"
-                    );
-
-
-                    setTimeout(
-                        () => {
-
-                            window.location.href =
-                                "/dashboard";
-
-                        },
-                        700
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Registration error:",
-                        error
-                    );
-
-
-                    const message =
-                        error?.data?.message ||
-                        error?.data?.error ||
-                        "Unable to create account.";
-
-
-                    showMessage(
-                        message,
-                        "error"
-                    );
-
-
-                } finally {
-
-                    submitButton.disabled =
-                        false;
-
-                    submitButton.textContent =
-                        "Create Student Account";
-                }
-
+            if (scrollContainer) {
+                scrollContainer.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
             }
-        );
 
-
-        // =================================================
-        // BACK TO LOGIN
-        // =================================================
-
-        document
-            .getElementById(
-                "backToLoginButton"
-            )
-            .addEventListener(
-                "click",
-                () => {
-
-                    window.location.href =
-                        "/";
-
-                }
-            );
-
-
-        // =================================================
-        // MESSAGE HELPERS
-        // =================================================
-
-        function showMessage(
-            message,
-            type
-        ) {
-
-            messageBox.textContent =
-                message;
-
-            messageBox.className =
-                `message ${type}`;
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
         }
 
-
-        function hideMessage() {
-
-            messageBox.textContent =
-                "";
-
-            messageBox.className =
-                "message hidden";
-        }
-
+        messageTimeout = setTimeout(() => {
+            hideMessage();
+        }, 5000);
     }
-);
+
+    function hideMessage() {
+        clearTimeout(messageTimeout);
+        messageBox.textContent = "";
+        messageBox.className = "message hidden";
+    }
+});

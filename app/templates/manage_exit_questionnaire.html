@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -35,9 +35,7 @@
 
         <div class="sidebar-brand">
 
-            <div class="brand-logo small">
-                GC
-            </div>
+            <div class="brand-logo small"><img src="{{ url_for('static', filename='images/nu-logo.png') }}" alt="National University Logo" class="nu-logo"></div>
 
             <div>
                 <strong>
@@ -174,7 +172,7 @@
 
                 <p>
                     Create and activate the questionnaire
-                    required for graduating students.
+                    required for students.
                 </p>
 
             </div>
@@ -209,7 +207,7 @@
 
                     <p>
                         The questionnaire currently available
-                        to graduating students.
+                        to students with approved clearance access.
                     </p>
 
                 </div>
@@ -240,7 +238,7 @@
                 <div>
 
                     <h2>
-                        Create New Questionnaire
+                        Create or Update Questionnaire
                     </h2>
 
                     <p>
@@ -266,7 +264,7 @@
                     <input
                         type="text"
                         id="questionnaireTitle"
-                        placeholder="Example: Graduating Student Exit Questionnaire"
+                        placeholder="Example: Student Exit Questionnaire"
                         maxlength="200"
                         required
                     >
@@ -350,3 +348,4 @@
 </body>
 
 </html>
+

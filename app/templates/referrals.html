@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -36,9 +36,7 @@
 
         <div class="sidebar-brand">
 
-            <div class="brand-logo small">
-                GC
-            </div>
+            <div class="brand-logo small"><img src="{{ url_for('static', filename='images/nu-logo.png') }}" alt="National University Logo" class="nu-logo"></div>
 
             <div>
 
@@ -293,8 +291,7 @@
                         <input
                             type="text"
                             id="subjectName"
-                            placeholder="Name of student being referred"
-                            required
+                            placeholder="Name of student being referred (optional)"
                         >
 
                     </div>
@@ -303,17 +300,22 @@
                     <div class="form-group">
 
                         <label for="subjectStudentId">
-                            Student ID
-                            <span class="optional-text">
-                                (optional)
-                            </span>
+                            Student Number
                         </label>
 
                         <input
-                            type="number"
+                            type="text"
                             id="subjectStudentId"
-                            placeholder="Internal student ID if known"
+                            placeholder="Example: 2023-606060"
+                            maxlength="50"
+                            required
                         >
+
+                        <small class="form-help">
+                            Enter the university student number of the
+                            student being referred. This will be used
+                            to identify their registered account.
+                        </small>
 
                     </div>
 
@@ -413,6 +415,11 @@
 
                         <small class="form-help">
                             Minimum of 20 characters.
+                            Describe the concern without revealing your own identity.
+                            Do not include your name, student number, email address,
+                            phone number, or other details that could identify you.
+                            You may include relevant information about the student
+                            being referred.
                         </small>
 
                     </div>
@@ -512,6 +519,12 @@
                     </p>
 
                     <p>
+                        For your privacy, avoid identifying yourself in the
+                        concern description. The information you submit will
+                        be reviewed by authorized guidance personnel.
+                    </p>
+
+                    <p>
                         Keep the tracking code provided after submission.
                         You can use it to check the referral status later.
                     </p>
@@ -548,3 +561,4 @@
 </body>
 
 </html>
+

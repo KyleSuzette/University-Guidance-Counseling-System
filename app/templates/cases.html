@@ -40,7 +40,11 @@
         <div class="sidebar-brand">
 
             <div class="brand-logo small">
-                GC
+                <img
+                    src="{{ url_for('static', filename='images/nu-logo.png') }}"
+                    alt="National University Logo"
+                    class="nu-logo"
+                >
             </div>
 
             <div>
@@ -269,7 +273,14 @@
                         <option value="FOLLOW_UP">
                             Follow Up
                         </option>
+                        
+                        <option value="PENDING_CLOSURE">
+                            Pending Closure
+                        </option>
 
+                        <option value="REVISION_REQUIRED">
+                            Revision Required
+                        </option>
                         <option value="CLOSED">
                             Closed
                         </option>
@@ -295,120 +306,6 @@
 
 
         </section>
-
-
-
-        <!-- ================================================= -->
-        <!-- CASE LIFECYCLE -->
-        <!-- ================================================= -->
-
-        <section class="panel workflow-panel">
-
-
-            <div class="panel-header">
-
-                <div>
-
-                    <h2>
-                        Case Progression
-                    </h2>
-
-                    <p>
-                        Standard counseling case lifecycle.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-
-            <div class="case-lifecycle">
-
-
-                <!-- INTAKE -->
-
-                <div class="lifecycle-step">
-
-                    <span class="step-number">
-                        1
-                    </span>
-
-                    <strong>
-                        INTAKE
-                    </strong>
-
-                </div>
-
-
-                <span class="lifecycle-arrow">
-                    →
-                </span>
-
-
-
-                <!-- ACTIVE -->
-
-                <div class="lifecycle-step">
-
-                    <span class="step-number">
-                        2
-                    </span>
-
-                    <strong>
-                        ACTIVE
-                    </strong>
-
-                </div>
-
-
-                <span class="lifecycle-arrow">
-                    →
-                </span>
-
-
-
-                <!-- FOLLOW UP -->
-
-                <div class="lifecycle-step">
-
-                    <span class="step-number">
-                        3
-                    </span>
-
-                    <strong>
-                        FOLLOW UP
-                    </strong>
-
-                </div>
-
-
-                <span class="lifecycle-arrow">
-                    →
-                </span>
-
-
-
-                <!-- CLOSED -->
-
-                <div class="lifecycle-step">
-
-                    <span class="step-number">
-                        4
-                    </span>
-
-                    <strong>
-                        CLOSED
-                    </strong>
-
-                </div>
-
-
-            </div>
-
-
-        </section>
-
 
     </main>
 

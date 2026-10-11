@@ -54,6 +54,34 @@ def find_conflicts(student_id, counselor_id, room_id, starts_at, ends_at, exclud
     return conflicts
 
 
+def describe_schedule_conflicts(conflicts):
+    """Create a clear message from the detected conflicts."""
+
+    reasons = {
+        resource
+        for conflict in conflicts
+        for resource in conflict["resources"]
+    }
+
+    messages = []
+
+    if "student" in reasons:
+        messages.append(
+            "The selected student already has an appointment during this time."
+        )
+
+    if "counselor" in reasons:
+        messages.append(
+            "The selected counselor is unavailable during this time."
+        )
+
+    if "room" in reasons:
+        messages.append(
+            "The selected guidance room is already booked during this time."
+        )
+
+    return " ".join(messages) or "The requested schedule is unavailable."
+
 @appointments_bp.post("/appointments")
 @roles_required(UserRole.STUDENT, UserRole.COUNSELOR, UserRole.HEAD_COUNSELOR, UserRole.ADMIN, UserRole.STAFF)
 def create_appointment():
@@ -106,7 +134,12 @@ def create_appointment():
         return error(problem)
     conflicts = find_conflicts(student.id, counselor.id, room.id if room else None, starts_at, ends_at)
     if conflicts:
-        return error("The requested time conflicts with an existing appointment.", 409, "schedule_conflict", {"conflicts": conflicts})
+        return error(
+            describe_schedule_conflicts(conflicts),
+            409,
+            "schedule_conflict",
+            {"conflicts": conflicts}
+        )
     appointment = Appointment(
         student_id=student.id,
         counselor_id=counselor.id,
@@ -168,7 +201,12 @@ def update_appointment_status(appointment_id):
     if status == AppointmentStatus.CONFIRMED:
         conflicts = find_conflicts(appointment.student_id, appointment.counselor_id, appointment.room_id, appointment.starts_at, appointment.ends_at, appointment.id)
         if conflicts:
-            return error("Appointment cannot be confirmed because the time is no longer available.", 409, "schedule_conflict", {"conflicts": conflicts})
+            return error(
+                describe_schedule_conflicts(conflicts),
+                409,
+                "schedule_conflict",
+                {"conflicts": conflicts}
+            )
     cancellation_reason, problem = clean_text(
         data.get("cancellation_reason"),
         "cancellation_reason",

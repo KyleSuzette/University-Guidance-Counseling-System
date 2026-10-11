@@ -18,6 +18,10 @@ document.addEventListener(
 
         const isHeadCounselor =
             userRole === "head_counselor";
+        
+        const canViewReferralQueue =
+            isHeadCounselor ||
+            userRole === "counselor";
 
         // =================================================
         // SHARED SIDEBAR
@@ -91,7 +95,7 @@ document.addEventListener(
         // ROLE-BASED REFERRAL VIEW
         // =================================================
 
-        if (isHeadCounselor) {
+        if (canViewReferralQueue) {
 
             if (managementSection) {
                 managementSection.classList.remove(
@@ -156,12 +160,11 @@ document.addEventListener(
                             .trim();
 
 
-                    const studentId =
+                    const studentNumber =
                         document
-                            .getElementById(
-                                "subjectStudentId"
-                            )
-                            .value;
+                            .getElementById("subjectStudentId")
+                            .value
+                            .trim();
 
 
                     const programYear =
@@ -225,12 +228,15 @@ document.addEventListener(
                     };
 
 
-                    if (studentId) {
-
-                        payload.subject_student_id =
-                            Number(studentId);
-
+                    if (!studentNumber) {
+                        showMessage(
+                            "Please enter the referred student's university student number.",
+                            "error"
+                        );
+                        return;
                     }
+
+                    payload.subject_student_number = studentNumber;
 
 
                     if (programYear) {
@@ -480,7 +486,7 @@ document.addEventListener(
 
         async function loadReferralQueue() {
 
-            if (!isHeadCounselor) {
+            if (!canViewReferralQueue) {
                 return;
             }
 
@@ -687,7 +693,7 @@ document.addEventListener(
                                         <strong>
 
                                             ${
-                                                referral.status === "NEW"
+                                                isHeadCounselor && referral.status === "NEW"
                                                     ? "Pending Assessment"
                                                     : escapeHtml(
                                                         referral.priority ||
@@ -755,7 +761,7 @@ document.addEventListener(
 
 
                                 ${
-                                    referral.status === "NEW"
+                                    isHeadCounselor && referral.status === "NEW"
 
                                         ? `
 
@@ -879,7 +885,7 @@ document.addEventListener(
 
 
                                 ${
-                                    referral.status === "TRIAGED"
+                                    isHeadCounselor && referral.status === "TRIAGED"
 
                                         ? `
 
@@ -1017,31 +1023,12 @@ document.addEventListener(
 
 
                                                 <div class="form-group">
-
-                                                    <label
-                                                        for="caseStudent-${referral.id}"
-                                                    >
-                                                        Registered Student
-                                                    </label>
-
-                                                    <select
-                                                        id="caseStudent-${referral.id}"
-                                                        class="case-student-select"
-                                                    >
-
-                                                        <option value="">
-                                                            Select registered student
-                                                        </option>
-
-                                                    </select>
-
                                                     <small class="form-help">
-                                                        Select the student record associated
-                                                        with this referral.
+                                                        The registered student will be linked automatically
+                                                        using the verified student number provided
+                                                        in the anonymous referral.
                                                     </small>
-
                                                 </div>
-
 
                                                 <div class="form-group">
 
@@ -1532,10 +1519,27 @@ document.addEventListener(
                     </option>
 
                 `;
+                counselors
+                    .filter(counselor => {
+                        const role = String(
+                            counselor.user?.role ||
+                            counselor.role ||
+                            ""
+                        ).toLowerCase();
 
+                        const name = String(
+                            counselor.full_name ||
+                            counselor.name ||
+                            counselor.user?.full_name ||
+                            counselor.user?.name ||
+                            ""
+                        ).toLowerCase();
 
-                counselors.forEach(
-                    counselor => {
+                        return role !== "head_counselor" &&
+                            !name.startsWith("head counselor");
+                    })
+                    .forEach(
+                        counselor => {
 
                         const option =
                             document.createElement(
@@ -1761,11 +1765,6 @@ document.addEventListener(
                         const referralId =
                             button.dataset.id;
 
-                        loadStudentsForCase(
-                            referralId
-                        );
-
-
                         button.addEventListener(
                             "click",
                             () => {
@@ -1783,169 +1782,6 @@ document.addEventListener(
 
         }
 
-
-        // =================================================
-        // LOAD REGISTERED STUDENTS
-        // =================================================
-
-        async function loadStudentsForCase(
-            referralId
-        ) {
-
-            const select =
-                document.getElementById(
-                    `caseStudent-${referralId}`
-                );
-
-
-            if (!select) {
-                return;
-            }
-
-
-            select.innerHTML = `
-
-                <option value="">
-                    Loading students...
-                </option>
-
-            `;
-
-
-            try {
-
-                const data =
-                    await apiRequest(
-                        "/students"
-                    );
-
-
-                const students =
-                    data.items || [];
-
-
-                select.innerHTML = `
-
-                    <option value="">
-                        Select registered student
-                    </option>
-
-                `;
-
-
-                students
-                    .filter(
-                        student =>
-                            student.active !== false
-                    )
-                    .forEach(
-                        student => {
-
-                            const option =
-                                document.createElement(
-                                    "option"
-                                );
-
-
-                            option.value =
-                                student.id;
-
-
-                            const studentNumber =
-                                student.student_number ||
-                                "No student number";
-
-
-                            const studentName =
-                                student.full_name ||
-                                [
-                                    student.first_name,
-                                    student.last_name
-                                ]
-                                    .filter(Boolean)
-                                    .join(" ") ||
-                                `Student ${student.id}`;
-
-
-                            const program =
-                                student.program
-                                    ? student.program
-                                    : "";
-
-
-                            const yearLevel =
-                                student.year_level
-                                    ? `Year ${student.year_level}`
-                                    : "";
-
-
-                            const academicInfo =
-                                [
-                                    program,
-                                    yearLevel
-                                ]
-                                    .filter(Boolean)
-                                    .join(", ");
-
-
-                            option.textContent =
-                                academicInfo
-                                    ? `${studentNumber} — ${studentName} (${academicInfo})`
-                                    : `${studentNumber} — ${studentName}`;
-
-
-                            select.appendChild(
-                                option
-                            );
-
-                        }
-                    );
-
-
-                if (
-                    select.options.length === 1
-                ) {
-
-                    select.innerHTML = `
-
-                        <option value="">
-                            No active students available
-                        </option>
-
-                    `;
-
-                }
-
-
-            } catch (error) {
-
-                console.error(
-                    "Unable to load students:",
-                    error
-                );
-
-
-                select.innerHTML = `
-
-                    <option value="">
-                        Unable to load students
-                    </option>
-
-                `;
-
-
-                showMessage(
-                    error?.data?.message ||
-                    error?.data?.error ||
-                    "Unable to load the registered student list.",
-                    "error"
-                );
-
-            }
-
-        }
-
-
         // =================================================
         // CREATE COUNSELING CASE
         // =================================================
@@ -1957,22 +1793,10 @@ document.addEventListener(
 
             hideMessage();
 
-
-            const studentSelect =
-                document.getElementById(
-                    `caseStudent-${referralId}`
-                );
-
-
             const intakeSummaryElement =
                 document.getElementById(
                     `caseIntakeSummary-${referralId}`
                 );
-
-
-            const studentId =
-                studentSelect?.value;
-
 
             const intakeSummary =
                 intakeSummaryElement?.value
@@ -1994,22 +1818,7 @@ document.addEventListener(
 
             // ---------------------------------------------
             // VALIDATION
-            // ---------------------------------------------
-
-            if (!studentId) {
-
-                showMessage(
-                    "Please select the registered student associated with this referral.",
-                    "error"
-                );
-
-                studentSelect?.focus();
-
-                return;
-
-            }
-
-
+            // --------------------------------------------
             if (!counselorId) {
 
                 showMessage(
@@ -2040,29 +1849,15 @@ document.addEventListener(
 
             const payload = {
 
-                student_id:
-                    Number(
-                        studentId
-                    ),
+                counselor_id: Number(counselorId),
 
-                counselor_id:
-                    Number(
-                        counselorId
-                    ),
+                referral_id: Number(referralId),
 
-                referral_id:
-                    Number(
-                        referralId
-                    ),
+                category: category,
 
-                category:
-                    category,
+                priority: priority,
 
-                priority:
-                    priority,
-
-                intake_summary:
-                    intakeSummary
+                intake_summary: intakeSummary
 
             };
 
@@ -2465,7 +2260,7 @@ document.addEventListener(
         // INITIAL LOAD
         // =================================================
 
-        if (isHeadCounselor) {
+        if (canViewReferralQueue) {
 
             loadReferralQueue();
 

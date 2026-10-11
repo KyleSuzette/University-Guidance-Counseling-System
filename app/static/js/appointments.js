@@ -435,8 +435,14 @@ document.addEventListener(
                     `;
 
 
-                counselors.forEach(
-                    counselor => {
+                counselors
+                    .filter(counselor =>
+                        !/^Head Counselor\b/i.test(
+                            getCounselorName(counselor).trim()
+                        )
+                    )
+                    .forEach(
+                        counselor => {
 
                         const option =
                             document.createElement(
@@ -1408,18 +1414,6 @@ async function printAppointmentSlip(
                         error?.data?.message ||
                         error?.data?.error ||
                         "Unable to create the appointment.";
-
-
-                    if (
-                        error?.data?.code ===
-                        "schedule_conflict"
-                    ) {
-
-                        message =
-                            "This schedule conflicts with an existing appointment. Please select another time, counselor, or room.";
-
-                    }
-
 
                     showMessage(
                         message,

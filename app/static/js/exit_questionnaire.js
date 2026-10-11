@@ -94,6 +94,109 @@ document.addEventListener(
 
         let activeQuestionnaire = null;
 
+        // Review state is scoped to the student's latest clearance.
+        // Keep historical records read-only.
+        let latestClearance = null;
+        let currentSubmission = null;
+        const reviewNotice = document.createElement("div");
+        reviewNotice.id = "exitReviewNotice";
+        reviewNotice.setAttribute("role", "status");
+        reviewNotice.style.cssText = "padding:14px 18px;margin:0 0 18px;border:1px solid #e9dff4;border-radius:12px;background:#f8f4ff;line-height:1.6;";
+        questionnairePanel?.parentNode?.insertBefore(reviewNotice, questionnairePanel);
+        reviewNotice.hidden = true;
+
+        function setReviewNotice(message) {
+            reviewNotice.textContent = message;
+            reviewNotice.hidden = !message;
+        }
+
+        function setFormReadOnly(readOnly) {
+            form?.querySelectorAll("input, textarea, select")
+                .forEach(element => { element.disabled = readOnly; });
+            if (submitButton) {
+                submitButton.disabled = readOnly;
+                submitButton.textContent = readOnly
+                    ? "Questionnaire Not Available"
+                    : "Submit Questionnaire";
+            }
+        }
+
+        async function loadReviewState() {
+            const [clearanceData, submissionData] = await Promise.all([
+                apiRequest("/clearances/me"),
+                apiRequest("/exit-submissions/me")
+            ]);
+            const records = clearanceData.items || [];
+            latestClearance = [...records].sort((a, b) =>
+                Number(b.id) - Number(a.id)
+            )[0] || null;
+            const submissions = submissionData.items || [];
+            currentSubmission = submissions.find(item =>
+                item.clearance_id === latestClearance?.id &&
+                item.questionnaire_id === activeQuestionnaire?.id
+            ) || null;
+
+            if (!latestClearance) {
+                setReviewNotice("Request clearance access first on the Clearance page.");
+                setFormReadOnly(true);
+                return false;
+            }
+            if (latestClearance.workflow_version === 1 || latestClearance.status === "CLEARED") {
+                setReviewNotice("This clearance is already finalized or historical. No new questionnaire submission is needed.");
+                setFormReadOnly(true);
+                return false;
+            }
+            if (latestClearance.access_status !== "APPROVED") {
+                setReviewNotice("Clearance access is " + (latestClearance.access_status || "PENDING") +
+                    ". Wait for approval or review your request on the Clearance page.");
+                setFormReadOnly(true);
+                return false;
+            }
+            
+            if (currentSubmission && currentSubmission.completed) {
+                const status = currentSubmission.review_status;
+
+                if (status === "RETURNED") {
+                    const saved = await apiRequest(
+                        `/exit-submissions/me/${currentSubmission.id}/answers`
+                    );
+
+                    (saved.responses || []).forEach(response => {
+                        const input = Array.from(
+                            form.querySelectorAll("[data-question-id]")
+                        ).find(element =>
+                            String(element.dataset.questionId) ===
+                            String(response.question_id)
+                        );
+
+                        if (input) {
+                            input.value = response.answer || "";
+                        }
+                    });
+                }
+
+                if (status === "APPROVED" || status === "PENDING") {
+                    setReviewNotice(status === "APPROVED"
+                        ? "Your Exit Questionnaire has been APPROVED."
+                        : "Your Exit Questionnaire has been submitted and is PENDING review.");
+                    setFormReadOnly(true);
+                    submitButton.textContent = status === "APPROVED" ? "Approved" : "Awaiting Review";
+                    return false;
+                }
+                if (status === "RETURNED") {
+                    setReviewNotice("Your questionnaire was RETURNED for correction. " +
+                        (currentSubmission.review_remarks || "Please review your answers and resubmit."));
+                    setFormReadOnly(false);
+                    submitButton.textContent = "Resubmit Corrected Answers";
+                    return true;
+                }
+            }
+            setReviewNotice("Clearance access approved. Complete your Exit Questionnaire below.");
+            setFormReadOnly(false);
+            return true;
+        }
+
+
 
 
         // =================================================
@@ -131,6 +234,14 @@ document.addEventListener(
                     activeQuestionnaire
                 );
 
+                try {
+                    await loadReviewState();
+                } catch (reviewError) {
+                    console.error("Unable to verify questionnaire eligibility:", reviewError);
+                    setReviewNotice("Unable to verify your clearance and review status. Please reload the page.");
+                    setFormReadOnly(true);
+                }
+
 
             } catch (error) {
 
@@ -150,7 +261,57 @@ document.addEventListener(
                     return;
 
                 }
+                // Hide the loading form when the questionnaire
+                // cannot be accessed.
+                questionnairePanel.classList.add("hidden");
+                setFormReadOnly(true);
 
+                if (error?.status === 403) {
+                    try {
+                        const result = await apiRequest("/clearances/me");
+
+                        const clearance = [...(result.items || [])]
+                            .sort((a, b) => Number(b.id) - Number(a.id))[0];
+
+                        if (
+                            clearance?.workflow_version === 1 &&
+                            clearance?.status === "CLEARED"
+                        ) {
+                            setReviewNotice(
+                                "Your clearance was completed under the previous process. " +
+                                "No additional Exit Questionnaire is required."
+                            );
+                        } else if (!clearance) {
+                            setReviewNotice(
+                                "You have no clearance request yet. " +
+                                "Visit Clearance to request access first."
+                            );
+                        } else if (clearance.status === "CLEARED") {
+                            setReviewNotice(
+                                "Your clearance is already complete. " +
+                                "No additional questionnaire is required."
+                            );
+                        } else {
+                            setReviewNotice(
+                                "Your clearance access is " +
+                                (clearance.access_status || "PENDING") +
+                                ". Visit Clearance to review your request."
+                            );
+                        }
+                    } catch (lookupError) {
+                        console.error(
+                            "Cannot check clearance status:",
+                            lookupError
+                        );
+
+                        setReviewNotice(
+                            "The questionnaire is unavailable. " +
+                            "Please check your clearance status or try again."
+                        );
+                    }
+
+                    return;
+                }
 
                 showMessage(
                     error?.data?.message ||
@@ -504,7 +665,7 @@ document.addEventListener(
                     event.preventDefault();
 
 
-                    if (!activeQuestionnaire) {
+                    if (!activeQuestionnaire || submitButton.disabled) {
                         return;
                     }
 
@@ -566,6 +727,8 @@ document.addEventListener(
                             "Exit questionnaire submitted successfully.",
                             "success"
                         );
+
+                        setReviewNotice("Your questionnaire was submitted and is PENDING review.");
 
 
                         // Disable questionnaire fields

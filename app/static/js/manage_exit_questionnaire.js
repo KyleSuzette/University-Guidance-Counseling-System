@@ -39,6 +39,8 @@ document.addEventListener(
 
 
         let questionCounter = 0;
+        let activeQuestionnaire = null;
+        let editingQuestionnaire = false;
 
 
         // =============================================
@@ -71,14 +73,14 @@ document.addEventListener(
             // CHECK PAGE ACCESS
             // =============================================
 
-            const canManageQuestionnaire =
-                user.role === "admin" ||
-                user.role === "head_counselor";
+            const canManageQuestionnaire = [
+                "admin",
+                "staff",
+                "counselor",
+                "head_counselor"
+            ].includes(user.role);
 
-
-            const canViewQuestionnaire =
-                canManageQuestionnaire ||
-                user.role === "staff";
+            const canViewQuestionnaire = canManageQuestionnaire;
 
 
             // Completely unauthorized role
@@ -98,20 +100,6 @@ document.addEventListener(
                 return;
 
             }
-
-
-            // =============================================
-            // STAFF
-            // Staff may view, but not create questionnaires.
-            // =============================================
-
-            if (user.role === "staff") {
-
-                form.style.display =
-                    "none";
-            }
-
-
         } catch (error) {
 
             console.error(
@@ -317,13 +305,11 @@ document.addEventListener(
 
 
             try {
-
-                const data =
-                    await apiRequest(
-                        "/exit-questionnaires/active"
-                    );
-
-
+                // Management roles load the current questionnaire directly.
+                // Student clearance access is checked on the Student page.
+                const data = await apiRequest(
+                    "/exit-questionnaires/active"
+                );
                 const questionnaire =
                     data.questionnaire ||
                     data;
@@ -335,18 +321,20 @@ document.addEventListener(
                 ) {
 
                     showNoActiveQuestionnaire();
-
+                    activeQuestionnaire = null;
                     return;
 
                 }
 
 
+                activeQuestionnaire = questionnaire;
                 renderActiveQuestionnaire(
                     questionnaire
                 );
 
 
             } catch (error) {
+                console.error("Active questionnaire load failed:", error);
 
                 if (
                     error?.status === 404 ||
@@ -370,8 +358,11 @@ document.addEventListener(
                         </h3>
 
                         <p>
-                            The active questionnaire
-                            could not be retrieved.
+                            ${escapeHtml(
+                                error?.data?.message ||
+                                error?.message ||
+                                `Request failed (HTTP ${error?.status || "unknown"}).`
+                            )}
                         </p>
 
                     </div>
@@ -515,15 +506,73 @@ document.addEventListener(
                                 `
                         }
 
+                    
+                        </div>
+
+                        <button
+                            type="button"
+                            id="editActiveQuestionnaireButton"
+                            class="secondary-button"
+                            style="margin-top: 20px;"
+                        >
+                            Edit Active Questionnaire
+                        </button>
+
                     </div>
 
-                </div>
+                `;
 
-            `;
+                document
+                    .getElementById("editActiveQuestionnaireButton")
+                    .addEventListener("click", () => {
 
-        }
+                        if (!activeQuestionnaire) {
+                            return;
+                        }
 
+                        editingQuestionnaire = true;
 
+                        document.getElementById("questionnaireTitle").value =
+                            activeQuestionnaire.title || "";
+
+                        builder.innerHTML = "";
+                        questionCounter = 0;
+
+                        const existingQuestions = [
+                            ...(activeQuestionnaire.questions || [])
+                        ].sort((a, b) => a.position - b.position);
+
+                        existingQuestions.forEach(question => {
+                            addQuestion();
+
+                            const item = builder.lastElementChild;
+
+                            item.querySelector(".question-prompt").value =
+                                question.prompt || "";
+
+                            item.querySelector(".question-type").value =
+                                question.field_type || "text";
+
+                            item.querySelector(".question-required").value =
+                                String(question.is_required);
+                        });
+
+                        createButton.textContent =
+                            "Publish Updated Questionnaire";
+
+                        form.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+
+                        showMessage(
+                            "The questionnaire is ready for editing. " +
+                            "Publishing will create a new version and preserve previous submissions.",
+                            "success"
+                        );
+                    });
+
+            }
 
         // =============================================
         // CREATE QUESTIONNAIRE
@@ -648,9 +697,13 @@ document.addEventListener(
 
 
                     showMessage(
-                        "Exit questionnaire created successfully.",
+                        editingQuestionnaire
+                            ? "Updated questionnaire published successfully. Previous submissions were preserved."
+                            : "Exit questionnaire created successfully.",
                         "success"
                     );
+
+                    editingQuestionnaire = false;
 
 
                     form.reset();
@@ -691,7 +744,9 @@ document.addEventListener(
 
 
                     createButton.textContent =
-                        "Create Questionnaire";
+                    editingQuestionnaire
+                        ? "Publish Updated Questionnaire"
+                        : "Create Questionnaire";
 
                 }
 

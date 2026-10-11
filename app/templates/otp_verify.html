@@ -1,0 +1,159 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Email Verification | University Guidance and Counseling</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-container">
+
+        <section class="auth-brand">
+
+            <div class="brand-logo"><img src="{{ url_for('static', filename='images/nu-logo.png') }}" alt="National University Logo" class="nu-logo"></div>
+
+            <h1>
+                Email<br>
+                Verification
+            </h1>
+
+            <p class="brand-subtitle">
+                University Guidance &amp; Counseling
+            </p>
+
+            <p class="brand-description">
+                Secure your student account through
+                email verification.
+            </p>
+
+        </section>
+
+        <section class="auth-card">
+
+            <div class="auth-card-header">
+
+                <h2>Verify Your Email</h2>
+
+                <p>
+                    Enter the 6-digit verification code
+                    sent to your email address.
+                </p>
+
+                <p
+                    id="verificationEmail"
+                    style="
+                        margin-top: 10px;
+                        font-weight: 600;
+                        overflow-wrap: anywhere;
+                    "
+                ></p>
+
+            </div>
+
+            <div
+                id="otpMessage"
+                class="message hidden"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+            <form id="otpForm">
+
+                <div class="form-group">
+
+                    <label for="otpCode">
+                        Verification Code
+                    </label>
+
+                    <input
+                        type="text"
+                        id="otpCode"
+                        name="otp_code"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        placeholder="Enter 6-digit code"
+                        required
+                        autofocus
+                        style="
+                            text-align: center;
+                            letter-spacing: 5px;
+                            font-size: 1.3rem;
+                            font-weight: 600;
+                        "
+                    >
+
+                </div>
+
+                <p
+                    class="brand-description"
+                    style="margin-bottom: 20px;"
+                >
+                    Your verification code expires in 5 minutes.
+                    You have a maximum of 3 incorrect attempts.
+                    Never share your code with anyone.
+                </p>
+
+                <button
+                    type="submit"
+                    id="verifyOtpButton"
+                    class="btn btn-primary btn-full"
+                >
+                    Verify Email
+                </button>
+
+            </form>
+
+            <div
+                class="auth-footer"
+                style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 12px;
+                    margin-top: 24px;
+                "
+            >
+
+                <p style="margin: 0;">
+                    Didn't receive the verification code?
+                </p>
+
+                <button
+                    type="button"
+                    id="resendOtpButton"
+                    class="link-button"
+                >
+                    Request Another Code
+                </button>
+
+                <button
+                    type="button"
+                    id="backToRegisterButton"
+                    class="link-button"
+                >
+                    Back to Registration
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/otp_verify.js') }}"></script>
+
+</body>
+</html>

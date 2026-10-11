@@ -49,59 +49,12 @@ def list_counselors():
 @profiles_bp.patch("/profile")
 @active_user_required
 def update_own_profile():
-    data, failure = json_body()
-    if failure:
-        return failure
-    user = current_user()
-    if user.role == UserRole.STUDENT:
-        profile = user.student_profile
-        allowed = {"first_name", "last_name", "program", "year_level", "contact_number"}
-    elif user.role in {UserRole.COUNSELOR, UserRole.HEAD_COUNSELOR}:
-        profile = user.counselor_profile
-        allowed = {"first_name", "last_name", "specialization"}
-    elif user.staff_profile:
-        profile = user.staff_profile
-        allowed = {"first_name", "last_name"}
-    else:
-        return error("This account has no editable profile.", 400)
-    if profile is None:
-        return error("Profile record is unavailable. Contact your administrator.", 404)
-    changed = allowed & data.keys()
-    if not changed:
-        return error("No editable profile fields were provided.")
-
-    updates = {}
-    for field in changed:
-        if field == "year_level":
-            if isinstance(data[field], (bool, float)):
-                return error("year_level must be a whole number from 1 to 8.")
-            try:
-                value = int(data[field])
-            except (TypeError, ValueError):
-                return error("year_level must be a number from 1 to 8.")
-            if not 1 <= value <= 8:
-                return error("year_level must be a number from 1 to 8.")
-        else:
-            required = field not in {"contact_number", "specialization"}
-            max_length = (
-                30
-                if field == "contact_number"
-                else 150
-                if field in {"program", "specialization"}
-                else 100
-            )
-            value, problem = clean_text(
-                data[field], field, max_length=max_length, required=required
-            )
-            if problem:
-                return error(problem)
-        updates[field] = value
-
-    for field, value in updates.items():
-        setattr(profile, field, value)
-    audit("PROFILE_UPDATED", "user", user.id, user.id, {"fields": sorted(updates)})
-    db.session.commit()
-    return jsonify(profile=profile.to_dict())
+    return error(
+        "Official personal information can only be updated "
+        "by an administrator.",
+        403,
+        "admin_update_required"
+    )
 
 
 def own_settings():

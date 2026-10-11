@@ -71,6 +71,8 @@ function setupRoleNavigation(role) {
         showNav(appointments);
         showNav(cases);
         showNav(referrals);
+        showNav(exit);
+        showNav(clearance);
 
         setNavText(
             referrals,

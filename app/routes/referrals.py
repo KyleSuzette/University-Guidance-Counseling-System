@@ -1,10 +1,11 @@
+import re
 from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
 from ..enums import Priority, ReferralStatus, UserRole
 from ..extensions import db
-from ..models import CounselorProfile, Referral, StudentProfile
+from ..models import CounselorProfile, Referral, ReferralIdentity, StudentProfile
 from ..utils import (
     audit,
     clean_text,
@@ -17,10 +18,110 @@ from ..utils import (
     parse_positive_int,
     roles_required,
     tracking_code,
+    referral_identity_hash,
+    generate_anonymous_reporter_reference,
+    encrypt_referral_identity,
+    decrypt_referral_identity,
 )
 
 referrals_bp = Blueprint("referrals", __name__)
 
+# =========================================================
+# ANONYMOUS REFERRAL — FREE-TEXT PRIVACY VALIDATION
+# =========================================================
+
+def validate_anonymous_concern_privacy(details):
+    """
+    Detect obvious contact information that may compromise
+    the reporting person's anonymity.
+
+    Reject and request revision instead of silently
+    modifying the original concern.
+    """
+
+    # Detect common email addresses.
+    email_pattern = (
+        r"\b[A-Za-z0-9._%+-]+@"
+        r"[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
+    )
+
+    if re.search(email_pattern, details):
+        return (
+            "Please remove email addresses from the concern "
+            "description to help protect anonymity."
+        )
+
+    # Detect common Philippine mobile numbers:
+    # 09XXXXXXXXX, +639XXXXXXXXX, 639XXXXXXXXX,
+    # with optional spaces or hyphens.
+    mobile_pattern = (
+        r"(?<!\d)"
+        r"(?:\+?63[\s-]?|0)"
+        r"9(?:[\s-]?\d){9}"
+        r"(?!\d)"
+    )
+
+    if re.search(mobile_pattern, details):
+        return (
+            "Please remove phone numbers from the concern "
+            "description to help protect anonymity."
+        )
+
+    # Detect explicit self-identification phrases.
+    self_identification_pattern = (
+        r"\b(?:my name is|"
+        r"i am named|"
+        r"my student number is|"
+        r"my student id is|"
+        r"my email is|"
+        r"my phone number is)\b"
+    )
+
+    if re.search(
+        self_identification_pattern,
+        details,
+        flags=re.IGNORECASE
+    ):
+        return (
+            "Your description appears to contain personal "
+            "identifying information. Please revise it "
+            "without identifying yourself."
+        )
+
+    return None
+
+
+def referral_staff_dict(referral):
+    """
+    Return referral details for an already-authorized
+    staff member.
+    """
+    result = referral.to_dict()
+
+    identity = db.session.scalar(
+        db.select(ReferralIdentity).filter_by(
+            referral_id=referral.id
+        )
+    )
+
+    if identity:
+        result["subject_name"] = decrypt_referral_identity(
+            identity.encrypted_subject_name
+        )
+
+        result["subject_program_year"] = decrypt_referral_identity(
+            identity.encrypted_subject_program_year
+        )
+
+        encrypted_id = identity.encrypted_subject_student_id
+
+        result["subject_student_id"] = (
+            int(decrypt_referral_identity(encrypted_id))
+            if encrypted_id
+            else None
+        )
+
+    return result
 
 # =========================================================
 # CREATE ANONYMOUS REFERRAL
@@ -29,15 +130,19 @@ referrals_bp = Blueprint("referrals", __name__)
 @referrals_bp.post("/referrals/anonymous")
 def create_anonymous_referral():
     data, failure = json_body(
-        ["subject_name", "concern_category", "concern_details"]
+        ["subject_student_number", "concern_category", "concern_details"]
     )
 
     if failure:
         return failure
 
     subject_name, problem = clean_text(
-        data["subject_name"], "subject_name", max_length=200
-    )
+    data.get("subject_name"),
+    "subject_name",
+    max_length=200,
+    required=False
+)
+
     if problem:
         return error(problem)
 
@@ -52,6 +157,15 @@ def create_anonymous_referral():
     )
     if problem:
         return error(problem)
+    
+    privacy_problem = validate_anonymous_concern_privacy(details)
+
+    if privacy_problem:
+        return error(
+            privacy_problem,
+            400,
+            "privacy_validation_failed"
+        )
 
     program_year, problem = clean_text(
         data.get("subject_program_year"),
@@ -73,35 +187,57 @@ def create_anonymous_referral():
         if parse_error:
             return error(parse_error)
 
-    subject_student_id = data.get("subject_student_id")
+    subject_student_number, problem = clean_text(
+    data["subject_student_number"],
+    "subject_student_number",
+    max_length=50
+    )
 
-    if subject_student_id not in (None, ""):
-        subject_student_id, problem = parse_positive_int(
-            subject_student_id, "subject_student_id"
-        )
-        if problem:
-            return error(problem)
-    else:
-        subject_student_id = None
+    if problem:
+        return error(problem)
 
-    if (
-        subject_student_id
-        and not db.session.get(
-            StudentProfile,
-            subject_student_id
+    student = db.session.scalar(
+        db.select(StudentProfile).filter_by(
+            student_number=subject_student_number
         )
-    ):
+    )
+
+    if not student or not student.user.is_active:
         return error(
-            "Target student was not found.",
+            "No active registered student matches this student number.",
             404,
-            "not_found"
+            "student_not_found"
         )
 
+    subject_student_id = student.id
+    if not subject_name:
+        subject_name = f"{student.first_name} {student.last_name}"
+        
+    # Anonymous reporter: use a random hashed reference.
+    # No reporter identity is collected or retained.
+    reporter_hash = generate_anonymous_reporter_reference()
+
+    # Pseudonymous reference for the referred Student.
+    subject_reference = (
+        f"student-profile:{subject_student_id}"
+        if subject_student_id is not None
+        else f"reported-name:{subject_name}"
+    )
+
+    subject_hash = referral_identity_hash(
+        subject_reference,
+        "subject"
+    )
+
+    # Incident record: do not store the subject's plaintext
+    # identity or direct Student account link here.
     referral = Referral(
         tracking_code=tracking_code("REF"),
-        subject_student_id=subject_student_id,
-        subject_name=subject_name,
-        subject_program_year=program_year,
+        reporter_reference_hash=reporter_hash,
+        subject_identity_hash=subject_hash,
+        subject_student_id=None,
+        subject_name="Protected identity",
+        subject_program_year=None,
         concern_category=category,
         concern_details=details,
         observed_at=observed_at,
@@ -109,6 +245,22 @@ def create_anonymous_referral():
 
     db.session.add(referral)
     db.session.flush()
+
+    # Separate, encrypted identity record.
+    referral_identity = ReferralIdentity(
+        referral_id=referral.id,
+        encrypted_subject_name=encrypt_referral_identity(
+            subject_name
+        ),
+        encrypted_subject_program_year=encrypt_referral_identity(
+            program_year
+        ),
+        encrypted_subject_student_id=encrypt_referral_identity(
+            subject_student_id
+        ),
+    )
+
+    db.session.add(referral_identity)
 
     # Anonymous referral:
     # No referrer ID, IP address, user agent,
@@ -163,7 +315,6 @@ def referral_status(tracking_code_value):
 @roles_required(
     UserRole.COUNSELOR,
     UserRole.HEAD_COUNSELOR,
-    UserRole.ADMIN
 )
 def list_referrals():
     stmt = db.select(Referral).order_by(
@@ -201,7 +352,7 @@ def list_referrals():
     return jsonify(
         paginated(
             stmt,
-            lambda item: item.to_dict()
+            lambda item: referral_staff_dict(item)
         )
     )
 
@@ -214,7 +365,6 @@ def list_referrals():
 @roles_required(
     UserRole.COUNSELOR,
     UserRole.HEAD_COUNSELOR,
-    UserRole.ADMIN
 )
 def get_referral(referral_id):
     referral = db.session.get(
@@ -258,7 +408,7 @@ def get_referral(referral_id):
     db.session.commit()
 
     return jsonify(
-        referral=referral.to_dict()
+        referral=referral_staff_dict(referral)
     )
 
 
@@ -270,7 +420,6 @@ def get_referral(referral_id):
 @referrals_bp.patch("/referrals/<int:referral_id>/triage")
 @roles_required(
     UserRole.HEAD_COUNSELOR,
-    UserRole.ADMIN
 )
 def triage_referral(referral_id):
     referral = db.session.get(
@@ -360,7 +509,6 @@ def triage_referral(referral_id):
 @referrals_bp.patch("/referrals/<int:referral_id>/assign")
 @roles_required(
     UserRole.HEAD_COUNSELOR,
-    UserRole.ADMIN
 )
 def assign_referral(referral_id):
     referral = db.session.get(
