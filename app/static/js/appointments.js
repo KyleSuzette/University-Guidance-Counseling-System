@@ -517,14 +517,11 @@ document.addEventListener(
                           data.rooms ||
                           [];
 
-
-                roomSelect.innerHTML =
-                    `
-                        <option value="">
-                            No room selected
-                        </option>
-                    `;
-
+                roomSelect.innerHTML = `
+                    <option value="" disabled selected>
+                        Select guidance room
+                    </option>
+                `;
 
                 rooms.forEach(
                     room => {
@@ -765,9 +762,10 @@ document.addEventListener(
 
                             <td>
                                 ${escapeHtml(
-                                    room
-                                        ? room.name
-                                        : "—"
+                                    room?.name ||
+                                    appointment.room_name ||
+                                    appointment.room?.name ||
+                                    "Not Assigned"
                                 )}
                             </td>
 
@@ -823,36 +821,47 @@ document.addEventListener(
 
             const status =
                 appointment.status;
+            
+            if (currentRole === "student") {
 
-
-            if (
-                currentRole ===
-                "student"
-            ) {
-
-                if (
+                const canCancel =
                     status === "REQUESTED" ||
-                    status === "CONFIRMED"
-                ) {
+                    status === "CONFIRMED";
 
-                    return `
-                        <button
-                            type="button"
-                            class="table-action-button cancel-appointment-button"
-                            data-id="${appointment.id}"
-                        >
-                            Cancel
-                        </button>
-                    `;
+                const canPrint =
+                    status === "CONFIRMED" ||
+                    status === "COMPLETED";
 
+                if (!canCancel && !canPrint) {
+                    return "—";
                 }
 
+                return `
+                    <div class="appointment-actions">
 
-                return "—";
+                        ${canCancel ? `
+                            <button
+                                type="button"
+                                class="table-action-button cancel-appointment-button"
+                                data-id="${appointment.id}"
+                            >
+                                Cancel
+                            </button>
+                        ` : ""}
 
+                        ${canPrint ? `
+                            <button
+                                type="button"
+                                class="table-action-button print-appointment-button"
+                                data-id="${appointment.id}"
+                            >
+                                Print Slip
+                            </button>
+                        ` : ""}
+
+                    </div>
+                `;
             }
-
-
             if (
                 managementRoles.includes(
                     currentRole
@@ -1177,7 +1186,21 @@ async function printAppointmentSlip(
         appointmentForm.addEventListener(
             "submit",
             async event => {
-
+                if (!counselorSelect.value) {
+                    showMessage(
+                        "Please select a counselor.",
+                        "error"
+                    );
+                    return;
+                }
+                if (!roomSelect.value) {
+                    showMessage(
+                        "Please select a guidance room.",
+                        "error"
+                    );
+                    roomSelect.focus();
+                    return;
+                }
                 event.preventDefault();
 
                 hideMessage();
