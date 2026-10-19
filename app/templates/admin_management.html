@@ -520,6 +520,39 @@
 
 
         </section>
+        
+<div id="editAccountModal" class="edit-account-modal" hidden>
+    <div class="edit-account-content"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="editAccountTitle">
+
+        <h2 id="editAccountTitle">Edit Personal Information</h2>
+        <p class="edit-account-description">
+            Update the selected user's official profile information.
+        </p>
+
+        <form id="editAccountForm">
+            <div id="editAccountFields"
+                 class="edit-account-fields">
+            </div>
+
+            <div class="edit-account-actions">
+                <button type="button"
+                        id="cancelEditAccount"
+                        class="edit-cancel-button">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        id="saveEditAccount"
+                        class="edit-save-button">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 
 
@@ -694,6 +727,41 @@
 
 <script src="{{ url_for('static', filename='js/navigation.js') }}"></script>
 {% include "_workspace.html" %}
+
+
+
+<div id="deactivateModal" class="deactivate-modal" hidden>
+    <div class="deactivate-modal-content"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="deactivateTitle">
+
+        <h2 id="deactivateTitle">
+            Deactivate Account?
+        </h2>
+
+        <p>
+            Are you sure you want to deactivate this account?
+            This user will no longer be able to log in
+            until their account is reactivated.
+        </p>
+
+        <div class="deactivate-modal-actions">
+            <button type="button"
+                    id="cancelDeactivate"
+                    class="cancel-deactivate">
+                Cancel
+            </button>
+
+            <button type="button"
+                    id="confirmDeactivate"
+                    class="confirm-deactivate">
+                Deactivate Account
+            </button>
+        </div>
+    </div>
+</div>
+
 </body>
 
 </html>

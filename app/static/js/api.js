@@ -161,6 +161,17 @@ async function refreshAccessToken() {
 
 
 // =========================================================
+// PUBLIC API ENDPOINTS
+// =========================================================
+
+function isPublicEndpoint(endpoint) {
+    return (
+        endpoint === "/referrals/anonymous" ||
+        endpoint.startsWith("/referrals/status/")
+    );
+}
+
+// =========================================================
 // API REQUEST
 // =========================================================
 
@@ -184,10 +195,14 @@ async function apiRequest(
     }
 
 
-    if (token) {
+    
+    if (token && !isPublicEndpoint(endpoint)) {
         headers["Authorization"] =
             `Bearer ${token}`;
+    } else if (isPublicEndpoint(endpoint)) {
+        delete headers["Authorization"];
     }
+
 
 
     const response = await fetch(
@@ -207,9 +222,11 @@ async function apiRequest(
     // =====================================================
 
     if (
+        !isPublicEndpoint(endpoint) &&
         response.status === 401 &&
         data?.error === "token_expired"
     ) {
+
 
         const refreshed =
             await refreshAccessToken();
@@ -266,6 +283,7 @@ async function apiRequest(
         "token_revoked"
     ];
     if (
+        !isPublicEndpoint(endpoint) &&
         response.status === 401 &&
         sessionErrors.includes(data?.error) &&
         !endpoint.startsWith("/auth/")

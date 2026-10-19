@@ -1,6 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>My Profile Â· Guidance</title><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>My Profile &middot; Guidance</title><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head>
 <body class="dashboard-body">
 <div class="dashboard-layout">
 <aside class="sidebar">
@@ -19,16 +19,16 @@
 <main class="main-content">
     <section class="profile-hero"><span class="workspace-avatar large" id="profileHeroAvatar">GC</span><div><p>YOUR PERSONAL SPACE</p><h1 id="profileHeroName">My Profile</h1><p id="profileHeroRole">Personal details, preferences & account security</p></div></section>
     <div id="profileMessage" class="profile-message" role="status" aria-live="polite"></div>
-    <div id="profileLoading" class="panel">Loading your profileâ€¦</div>
+    <div id="profileLoading" class="panel">Loading your profile&hellip;</div>
     <div class="profile-grid" id="profileContent" hidden>
         <div class="profile-stack">
             <section class="panel"><div class="panel-header"><div><h2>Make it yours</h2><p>Your display name and introduction</p></div></div>
-                <form id="preferencesForm" class="profile-form"><label>Display name<input name="display_name" maxlength="100" autocomplete="nickname"></label><label>Short bio<textarea name="bio" maxlength="500" placeholder="A little about youâ€¦"></textarea><span class="field-note">Optional. Avoid including private counseling or medical information.</span></label><button class="profile-submit" type="submit">Save preferences</button></form>
+                <form id="preferencesForm" class="profile-form"><label>Display name<input name="display_name" maxlength="100" autocomplete="nickname"></label><label>Short bio<textarea name="bio" maxlength="500" placeholder="A little about yourself"></textarea><span class="field-note">Optional. Avoid including private counseling or medical information.</span></label><button class="profile-submit" type="submit">Save preferences</button></form>
             </section>
             <section class="panel"><div class="panel-header"><div><h2>Personal information</h2><p>Keep your details up to date</p></div></div><form id="detailsForm" class="profile-form"></form><p class="muted" id="detailsNote"></p></section>
         </div>
         <div class="profile-stack">
-            <section class="panel"><div class="panel-header"><div><h2>Profile photo</h2><p>A familiar face for your workspace</p></div></div><form id="photoForm" class="profile-form"><label>Choose a photo<input type="file" name="photo" accept="image/png,image/jpeg" required><span class="field-note">PNG or JPEG Â· up to 2 MB Â· up to 16 megapixels. Photos are center-cropped to a square and metadata is removed.</span></label><button class="profile-submit" type="submit">Upload photo</button><button class="profile-secondary" type="button" id="removePhoto">Remove photo</button></form></section>
+            <section class="panel"><div class="panel-header"><div><h2>Profile photo</h2><p>A familiar face for your workspace</p></div></div><form id="photoForm" class="profile-form"><label>Choose a photo<input type="file" name="photo" accept="image/png,image/jpeg" required><span class="field-note">PNG or JPEG &middot; up to 2 MB &middot; up to 16 megapixels. Photos are center-cropped to a square and metadata is removed.</span></label><button class="profile-submit" type="submit">Upload photo</button><button class="profile-secondary" type="button" id="removePhoto">Remove photo</button></form></section>
             <section class="panel"><div class="panel-header"><div><h2>Account & security</h2><p>Keep your sign-in details protected</p></div></div><div class="profile-form"><label>Sign-in email<input id="accountEmail" readonly></label><label>Account role<input id="accountRole" readonly></label><p class="field-note">Email, role, and institutional ID changes require your administrator.</p></div><hr><form id="passwordForm" class="profile-form"><label>Current password<input name="current_password" type="password" autocomplete="current-password" required></label><label>New password<input name="new_password" type="password" autocomplete="new-password" minlength="8" required><span class="field-note" id="passwordRules">Use at least 8 characters, including uppercase, lowercase, a number, and a special character.</span></label><label>Confirm new password<input name="confirmation" type="password" autocomplete="new-password" minlength="8" required></label><p class="muted">Changing your password signs you out on all devices.</p><button class="profile-submit" type="submit">Update password</button></form></section>
         </div>
     </div>

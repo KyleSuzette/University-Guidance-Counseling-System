@@ -16,6 +16,69 @@ document.addEventListener(
                 currentUser.role || ""
             ).toLowerCase();
 
+        
+        // =================================================
+        // PUBLIC VISITOR NAVIGATION
+        // =================================================
+
+        const isLoggedIn =
+            Boolean(getAccessToken());
+            if (isLoggedIn) {
+                document.body.classList.remove("public-referral-visitor");
+            }
+
+        if (!isLoggedIn) {
+            const sidebarBottom =
+                document.querySelector(".sidebar-bottom");
+
+            if (sidebarBottom) {
+                sidebarBottom.style.display = "none";
+            }
+
+            const dashboardNav =
+                document.getElementById("dashboardNav");
+
+            const profileButton =
+                document.getElementById("profileButton");
+
+            const logoutButton =
+                document.getElementById("logoutButton");
+            
+            const sidebarNav =
+                document.querySelector(".sidebar-nav");
+
+            if (sidebarNav) {
+
+                const backToLogin =
+                    document.createElement("button");
+
+                backToLogin.type = "button";
+                backToLogin.className = "nav-item";
+                backToLogin.textContent = "← Back to Login";
+
+                backToLogin.addEventListener("click", () => {
+                    window.location.href = "/";
+                });
+
+                sidebarNav.appendChild(backToLogin);
+            }
+
+
+            // Hide account-only navigation for visitors.
+            [
+                dashboardNav,
+                profileButton,
+                logoutButton
+            ].forEach(button => {
+
+                if (button) {
+                    button.style.display = "none";
+                }
+
+            });
+
+        }
+
         const isHeadCounselor =
             userRole === "head_counselor";
         

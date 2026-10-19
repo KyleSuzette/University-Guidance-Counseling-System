@@ -220,8 +220,260 @@ document.addEventListener(
                     "";
             }
         }
+        
+function bindEditAccountButtons(accounts) {
+    document.querySelectorAll(".edit-account-button")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                const account = accounts.find(
+                    item => String(item.id) === button.dataset.id
+                );
 
+                if (account) {
+                    openEditAccount(account);
+                }
+            });
+        });
+}
 
+const editModal = document.getElementById("editAccountModal");
+const editForm = document.getElementById("editAccountForm");
+const editFields = document.getElementById("editAccountFields");
+const editSaveButton = document.getElementById("saveEditAccount");
+
+let editingAccountId = null;
+
+const editableFields = {
+    student: [
+        ["student_number", "Student Number"],
+        ["first_name", "First Name"],
+        ["last_name", "Last Name"],
+        ["program", "Program"],
+        ["year_level", "Year Level"],
+        ["contact_number", "Contact Number"]
+    ],
+    counselor: [
+        ["employee_number", "Employee Number"],
+        ["first_name", "First Name"],
+        ["last_name", "Last Name"],
+        ["specialization", "Specialization"]
+    ],
+    head_counselor: [
+        ["employee_number", "Employee Number"],
+        ["first_name", "First Name"],
+        ["last_name", "Last Name"],
+        ["specialization", "Specialization"]
+    ],
+    staff: [
+        ["employee_number", "Employee Number"],
+        ["first_name", "First Name"],
+        ["last_name", "Last Name"]
+    ],
+    admin: [
+        ["employee_number", "Employee Number"],
+        ["first_name", "First Name"],
+        ["last_name", "Last Name"]
+    ]
+};
+
+function openEditAccount(account) {
+    const profile = account.profile;
+
+    if (!profile) {
+        showMessage(
+            "This account has no profile record to edit.",
+            "error"
+        );
+        return;
+    }
+
+    const fields = editableFields[account.role];
+
+    if (!fields) {
+        showMessage("Unsupported account role.", "error");
+        return;
+    }
+
+    editingAccountId = account.id;
+    editFields.replaceChildren();
+
+    document.getElementById("editAccountTitle").textContent =
+        `Edit ${formatRole(account.role)} Information`;
+
+    fields.forEach(([key, label]) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "edit-field";
+
+        const labelElement = document.createElement("label");
+        labelElement.textContent = label;
+
+        const input = document.createElement("input");
+        input.name = key;
+        input.type = key === "year_level" ? "number" : "text";
+        input.value = profile[key] ?? "";
+
+        if (key === "year_level") {
+            input.min = "1";
+            input.max = "8";
+            input.step = "1";
+        }
+
+        input.required = ![
+            "contact_number",
+            "specialization"
+        ].includes(key);
+
+        const inputId = `edit-${key}`;
+        input.id = inputId;
+        labelElement.htmlFor = inputId;
+
+        wrapper.append(labelElement, input);
+        editFields.appendChild(wrapper);
+    });
+
+    editModal.hidden = false;
+    editFields.querySelector("input")?.focus();
+}
+
+function closeEditAccount() {
+    editModal.hidden = true;
+    editingAccountId = null;
+    editForm.reset();
+}
+
+document.getElementById("cancelEditAccount")
+    .addEventListener("click", closeEditAccount);
+
+editModal.addEventListener("click", event => {
+    if (event.target === editModal) {
+        closeEditAccount();
+    }
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !editModal.hidden) {
+        closeEditAccount();
+    }
+});
+
+editForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (editingAccountId === null) return;
+
+    const payload = {};
+    const formData = new FormData(editForm);
+
+    for (const [key, value] of formData.entries()) {
+        payload[key] = key === "year_level"
+            ? Number(value)
+            : String(value).trim();
+    }
+
+    editSaveButton.disabled = true;
+    editSaveButton.textContent = "Saving...";
+
+    try {
+        await apiRequest(
+            `/admin/accounts/${editingAccountId}/profile`,
+            {
+                method: "PATCH",
+                body: JSON.stringify(payload)
+            }
+        );
+
+        closeEditAccount();
+
+        await loadAccounts();
+
+        showMessage(
+            "Personal information updated successfully.",
+            "success"
+        );
+
+    } catch (error) {
+        showMessage(
+            getErrorMessage(
+                error,
+                "Unable to update personal information."
+            ),
+            "error"
+        );
+    } finally {
+        editSaveButton.disabled = false;
+        editSaveButton.textContent = "Save Changes";
+    }
+});
+
+        
+
+function showAccountConfirmation(action) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("deactivateModal");
+        const title = document.getElementById("deactivateTitle");
+        const description = modal?.querySelector("p");
+        const confirmBtn = document.getElementById("confirmDeactivate");
+        const cancelBtn = document.getElementById("cancelDeactivate");
+
+        if (!modal || !title || !description ||
+            !confirmBtn || !cancelBtn) {
+            console.error("Account confirmation modal is missing.");
+            resolve(false);
+            return;
+        }
+
+        const isDeactivate = action === "deactivate";
+
+        title.textContent = isDeactivate
+            ? "Deactivate Account?"
+            : "Activate Account?";
+
+        description.textContent = isDeactivate
+            ? "Are you sure you want to deactivate this account? The user will no longer be able to log in until their account is reactivated."
+            : "Are you sure you want to activate this account? The user will be able to log in again.";
+
+        confirmBtn.textContent = isDeactivate
+            ? "Deactivate Account"
+            : "Activate Account";
+
+        modal.hidden = false;
+        cancelBtn.focus();
+
+        function finish(confirmed) {
+            modal.hidden = true;
+            confirmBtn.removeEventListener("click", onConfirm);
+            cancelBtn.removeEventListener("click", onCancel);
+            modal.removeEventListener("click", onBackdrop);
+            document.removeEventListener("keydown", onKeydown);
+            resolve(confirmed);
+        }
+
+        function onConfirm() {
+            finish(true);
+        }
+
+        function onCancel() {
+            finish(false);
+        }
+
+        function onBackdrop(event) {
+            if (event.target === modal) {
+                finish(false);
+            }
+        }
+
+        function onKeydown(event) {
+            if (event.key === "Escape") {
+                finish(false);
+            }
+        }
+
+        confirmBtn.addEventListener("click", onConfirm);
+        cancelBtn.addEventListener("click", onCancel);
+        modal.addEventListener("click", onBackdrop);
+        document.addEventListener("keydown", onKeydown);
+    });
+}
 
         // =====================================================
         // CREATE ACCOUNT
@@ -443,124 +695,76 @@ document.addEventListener(
         // =====================================================
         // RENDER ACCOUNTS
         // =====================================================
-
         function renderAccounts(accounts) {
-
-            accountTableBody.innerHTML =
-                "";
-
+            accountTableBody.innerHTML = "";
 
             if (!accounts.length) {
-
-                accountTableBody.innerHTML =
-                    `
-                        <tr>
-                            <td
-                                colspan="5"
-                                class="empty-table"
-                            >
-                                No accounts found.
-                            </td>
-                        </tr>
-                    `;
-
+                accountTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-table">
+                            No accounts found.
+                        </td>
+                    </tr>
+                `;
                 return;
             }
 
+            accounts.forEach(account => {
+                const profile = account.profile;
 
-            accounts.forEach(
-                account => {
+                const name = profile
+                    ? (
+                        profile.full_name ||
+                        `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
+                        "—"
+                    )
+                    : "—";
 
-                    const profile =
-                        account.profile;
+                const row = document.createElement("tr");
 
+                row.innerHTML = `
+                    <td>${escapeHtml(name)}</td>
 
-                    let name =
-                        "—";
+                    <td>${escapeHtml(account.email)}</td>
 
+                    <td>${escapeHtml(formatRole(account.role))}</td>
 
-                    if (profile) {
+                    <td>
+                        <span class="status-badge ${
+                            account.is_active
+                                ? "status-active"
+                                : "status-inactive"
+                        }">
+                            ${account.is_active ? "Active" : "Inactive"}
+                        </span>
+                    </td>
 
-                        name =
-                            profile.full_name ||
-                            `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
-                            "—";
-                    }
+                    <td>
+                        <div class="account-actions">
+                            <button
+                                type="button"
+                                class="table-action-button edit-account-button"
+                                data-id="${account.id}">
+                                Edit
+                            </button>
 
+                            <button
+                                type="button"
+                                class="table-action-button account-status-button"
+                                data-id="${account.id}"
+                                data-active="${account.is_active}">
+                                ${account.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                        </div>
+                    </td>
+                `;
 
-                    const row =
-                        document.createElement(
-                            "tr"
-                        );
-
-
-                    row.innerHTML =
-                        `
-                            <td>
-                                ${escapeHtml(name)}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(
-                                    account.email
-                                )}
-                            </td>
-
-                            <td>
-                                ${escapeHtml(
-                                    formatRole(
-                                        account.role
-                                    )
-                                )}
-                            </td>
-
-                            <td>
-
-                                <span
-                                    class="status-badge ${
-                                        account.is_active
-                                            ? "status-active"
-                                            : "status-inactive"
-                                    }"
-                                >
-                                    ${
-                                        account.is_active
-                                            ? "Active"
-                                            : "Inactive"
-                                    }
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <button
-                                    type="button"
-                                    class="table-action-button account-status-button"
-                                    data-id="${account.id}"
-                                    data-active="${account.is_active}"
-                                >
-                                    ${
-                                        account.is_active
-                                            ? "Deactivate"
-                                            : "Activate"
-                                    }
-                                </button>
-
-                            </td>
-                        `;
-
-
-                    accountTableBody
-                        .appendChild(row);
-                }
-            );
-
+                accountTableBody.appendChild(row);
+            });
 
             bindAccountButtons();
+            bindEditAccountButtons(accounts);
         }
-
-
 
         // =====================================================
         // ACTIVATE / DEACTIVATE ACCOUNT
@@ -592,14 +796,11 @@ document.addEventListener(
                                     currentlyActive
                                         ? "deactivate"
                                         : "activate";
+                                
+                                    
+                                const confirmed = await showAccountConfirmation(action);
 
-
-                                if (
-                                    !window.confirm(
-                                        `Are you sure you want to ${action} this account?`
-                                    )
-                                ) {
-
+                                if (!confirmed) {
                                     return;
                                 }
 
